@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - GeoSurvey</title>
+    <link rel="stylesheet" href="/static/admindashboard/dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>GeoSurvey Admin</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active"><a href="#">Overview</a></li>
+                    <li><a href="#">Users</a></li>
+                    <li><a href="#">Surveys</a></li>
+                    <li><a href="#">Analytics</a></li>
+                    <li><a href="#">Database</a></li>
+                    <li><a href="#">System</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-profile">
+                <img src="/static/admindashboard/admin.png" alt="Admin" class="profile-pic">
+                <div class="profile-info">
+                    <span id="profileName">Admin Name</span>
+                    <a href="#" class="profile-link">Profile</a>
+                </div>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-title">Welcome to the Admin Dashboard</div>
+                <button class="logout-btn" onclick="logoutUser()">Logout</button>
+            </div>
+            <section class="dashboard-overview">
+                <p>Select a section from the sidebar to manage the system.</p>
+            </section>
+        </main>
+    </div>
+    <script>
+    function logoutUser() {
+        localStorage.removeItem('access');
+        localStorage.removeItem('refresh');
+        window.location.href = '/api/account/login-page/';
+    }
+    </script>
+</body>
+</html> 

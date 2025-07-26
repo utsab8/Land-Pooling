@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample Land Survey Data</name>
+    <description>This is a sample KML file containing land survey data with multiple features and extended data.</description>
+    
+    <!-- Sample Point Feature -->
+    <Placemark>
+      <name>Survey Point 001</name>
+      <description>This is a sample survey point with detailed information</description>
+      <Point>
+        <coordinates>-122.4194,37.7749,0</coordinates>
+      </Point>
+      <ExtendedData>
+        <Data name="kitta_number">
+          <value>KML001</value>
+        </Data>
+        <Data name="owner_name">
+          <value>John Doe</value>
+        </Data>
+        <Data name="area_hectares">
+          <value>0.5</value>
+        </Data>
+        <Data name="area_sqm">
+          <value>5000</value>
+        </Data>
+        <Data name="survey_date">
+          <value>2024-01-15</value>
+        </Data>
+        <Data name="surveyor">
+          <value>ABC Surveying Co.</value>
+        </Data>
+        <Data name="land_use">
+          <value>Residential</value>
+        </Data>
+        <Data name="zoning">
+          <value>R-1</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+    
+    <!-- Sample Polygon Feature -->
+    <Placemark>
+      <name>Land Parcel 002</name>
+      <description>This is a sample land parcel with polygon geometry</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -122.4194,37.7749,0
+              -122.4194,37.7849,0
+              -122.4094,37.7849,0
+              -122.4094,37.7749,0
+              -122.4194,37.7749,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+      <ExtendedData>
+        <Data name="kitta_number">
+          <value>KML002</value>
+        </Data>
+        <Data name="owner_name">
+          <value>Jane Smith</value>
+        </Data>
+        <Data name="area_hectares">
+          <value>1.2</value>
+        </Data>
+        <Data name="area_sqm">
+          <value>12000</value>
+        </Data>
+        <Data name="survey_date">
+          <value>2024-01-20</value>
+        </Data>
+        <Data name="surveyor">
+          <value>XYZ Surveying Services</value>
+        </Data>
+        <Data name="land_use">
+          <value>Commercial</value>
+        </Data>
+        <Data name="zoning">
+          <value>C-2</value>
+        </Data>
+        <Data name="property_value">
+          <value>500000</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+    
+    <!-- Sample Line Feature -->
+    <Placemark>
+      <name>Property Boundary 003</name>
+      <description>This is a sample property boundary line</description>
+      <LineString>
+        <coordinates>
+          -122.4294,37.7649,0
+          -122.4194,37.7749,0
+          -122.4094,37.7849,0
+          -122.3994,37.7949,0
+        </coordinates>
+      </LineString>
+      <ExtendedData>
+        <Data name="kitta_number">
+          <value>KML003</value>
+        </Data>
+        <Data name="owner_name">
+          <value>Bob Johnson</value>
+        </Data>
+        <Data name="boundary_type">
+          <value>Property Line</value>
+        </Data>
+        <Data name="length_meters">
+          <value>150.5</value>
+        </Data>
+        <Data name="survey_date">
+          <value>2024-01-25</value>
+        </Data>
+        <Data name="surveyor">
+          <value>DEF Land Surveyors</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+    
+    <!-- Sample MultiGeometry Feature -->
+    <Placemark>
+      <name>Complex Property 004</name>
+      <description>This is a complex property with multiple geometries</description>
+      <MultiGeometry>
+        <Point>
+          <coordinates>-122.4394,37.7549,0</coordinates>
+        </Point>
+        <Polygon>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>
+                -122.4394,37.7549,0
+                -122.4394,37.7649,0
+                -122.4294,37.7649,0
+                -122.4294,37.7549,0
+                -122.4394,37.7549,0
+              </coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </MultiGeometry>
+      <ExtendedData>
+        <Data name="kitta_number">
+          <value>KML004</value>
+        </Data>
+        <Data name="owner_name">
+          <value>Alice Brown</value>
+        </Data>
+        <Data name="area_hectares">
+          <value>0.8</value>
+        </Data>
+        <Data name="area_sqm">
+          <value>8000</value>
+        </Data>
+        <Data name="survey_date">
+          <value>2024-01-30</value>
+        </Data>
+        <Data name="surveyor">
+          <value>GHI Surveying Group</value>
+        </Data>
+        <Data name="land_use">
+          <value>Mixed Use</value>
+        </Data>
+        <Data name="zoning">
+          <value>M-1</value>
+        </Data>
+        <Data name="property_value">
+          <value>750000</value>
+        </Data>
+        <Data name="building_area">
+          <value>2000</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+  </Document>
+</kml> 

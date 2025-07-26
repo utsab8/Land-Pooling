@@ -1,0 +1,424 @@
+from django.db import models
+from django.conf import settings
+from django.utils import timezone
+import uuid
+import os
+import json
+
+class FileUpload(models.Model):
+    """Enhanced model for all file uploads with conversion tracking"""
+    FILE_TYPES = [
+        ('kml', 'KML File'),
+        ('csv', 'CSV File'),
+        ('shapefile', 'Shapefile'),
+        ('geojson', 'GeoJSON'),
+        ('excel', 'Excel File'),
+        ('pdf', 'PDF Document'),
+        ('image', 'Image File'),
+        ('other', 'Other File'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('validated', 'Validated'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='file_uploads')
+    file = models.FileField(upload_to='uploads/')
+    original_filename = models.CharField(max_length=255)
+    file_type = models.CharField(max_length=20, choices=FILE_TYPES)
+    file_size = models.BigIntegerField()
+    mime_type = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    tags = models.JSONField(default=list, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    processing_started = models.DateTimeField(null=True, blank=True)
+    processing_completed = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(blank=True, null=True)
+    validation_errors = models.JSONField(default=list, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    is_public = models.BooleanField(default=False)
+    download_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Enhanced metadata fields
+    geometry_type = models.CharField(max_length=50, blank=True, null=True)
+    coordinate_system = models.CharField(max_length=50, blank=True, null=True)
+    feature_count = models.PositiveIntegerField(default=0)
+    bounds = models.JSONField(default=dict, blank=True)  # minx, miny, maxx, maxy
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'file_type']),
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['file_type', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.original_filename} ({self.file_type}) - {getattr(self.user, 'email', self.user)}"
+    
+    @property
+    def file_size_mb(self):
+        return round(self.file_size / (1024 * 1024), 2)
+    
+    @property
+    def file_size_kb(self):
+        return round(self.file_size / 1024, 2)
+    
+    @property
+    def file_extension(self):
+        return os.path.splitext(self.original_filename)[1].lower()
+    
+    @property
+    def is_image(self):
+        return self.file_type == 'image'
+    
+    @property
+    def is_geospatial(self):
+        return self.file_type in ['kml', 'csv', 'shapefile', 'geojson']
+    
+    def get_absolute_url(self):
+        return f'/dashboard/uploads/{self.id}/'
+    
+    def increment_download_count(self):
+        self.download_count += 1
+        self.save(update_fields=['download_count'])
+
+class FileProcessingLog(models.Model):
+    """Model to track file processing history"""
+    PROCESSING_TYPES = [
+        ('validation', 'File Validation'),
+        ('parsing', 'File Parsing'),
+        ('conversion', 'File Conversion'),
+        ('analysis', 'Data Analysis'),
+        ('export', 'File Export'),
+    ]
+    
+    file_upload = models.ForeignKey(FileUpload, on_delete=models.CASCADE, related_name='processing_logs')
+    processing_type = models.CharField(max_length=20, choices=PROCESSING_TYPES)
+    status = models.CharField(max_length=20, choices=FileUpload.STATUS_CHOICES)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    duration_seconds = models.FloatField(null=True, blank=True)
+    details = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-started_at']
+    
+    def __str__(self):
+        return f"{self.file_upload.original_filename} - {self.processing_type} - {self.status}"
+
+class FileValidationRule(models.Model):
+    """Model to define validation rules for different file types"""
+    file_type = models.CharField(max_length=20, choices=FileUpload.FILE_TYPES)
+    rule_name = models.CharField(max_length=100)
+    rule_description = models.TextField()
+    max_file_size_mb = models.PositiveIntegerField(default=10)
+    allowed_extensions = models.JSONField(default=list)
+    required_fields = models.JSONField(default=list, blank=True)
+    validation_regex = models.CharField(max_length=500, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        unique_together = ['file_type', 'rule_name']
+        ordering = ['file_type', 'rule_name']
+    
+    def __str__(self):
+        return f"{self.file_type} - {self.rule_name}"
+
+class FileShare(models.Model):
+    """Model for file sharing functionality"""
+    SHARE_TYPES = [
+        ('public', 'Public Link'),
+        ('private', 'Private Link'),
+        ('email', 'Email Share'),
+        ('expiring', 'Expiring Link'),
+    ]
+    
+    file_upload = models.ForeignKey(FileUpload, on_delete=models.CASCADE, related_name='shares')
+    share_type = models.CharField(max_length=20, choices=SHARE_TYPES)
+    share_token = models.UUIDField(default=uuid.uuid4, editable=False)
+    shared_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shared_files')
+    shared_with_email = models.EmailField(blank=True, null=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    download_limit = models.PositiveIntegerField(null=True, blank=True)
+    current_downloads = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['share_token']),
+            models.Index(fields=['expires_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.file_upload.original_filename} - {self.share_type} - {self.shared_by}"
+    
+    @property
+    def is_expired(self):
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+    
+    @property
+    def is_download_limit_reached(self):
+        if self.download_limit:
+            return self.current_downloads >= self.download_limit
+        return False
+    
+    def can_be_downloaded(self):
+        return self.is_active and not self.is_expired and not self.is_download_limit_reached
+
+class FileConversion(models.Model):
+    """Model to track file conversions"""
+    CONVERSION_TYPES = [
+        ('kml_to_csv', 'KML to CSV'),
+        ('kml_to_shapefile', 'KML to Shapefile'),
+        ('csv_to_kml', 'CSV to KML'),
+        ('csv_to_shapefile', 'CSV to Shapefile'),
+        ('shapefile_to_kml', 'Shapefile to KML'),
+        ('shapefile_to_csv', 'Shapefile to CSV'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source_file = models.ForeignKey(FileUpload, on_delete=models.CASCADE, related_name='conversions')
+    conversion_type = models.CharField(max_length=30, choices=CONVERSION_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    output_file = models.FileField(upload_to='exports/', blank=True, null=True)
+    output_filename = models.CharField(max_length=255, blank=True)
+    file_size = models.BigIntegerField(default=0)
+    processing_started = models.DateTimeField(auto_now_add=True)
+    processing_completed = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(blank=True, null=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    
+    class Meta:
+        ordering = ['-processing_started']
+        indexes = [
+            models.Index(fields=['source_file', 'conversion_type']),
+            models.Index(fields=['status', 'processing_started']),
+        ]
+    
+    def __str__(self):
+        return f"{self.source_file.original_filename} → {self.get_conversion_type_display()}"
+
+class CSVData(models.Model):
+    """Model to store parsed CSV data"""
+    file_upload = models.ForeignKey(FileUpload, on_delete=models.CASCADE, related_name='csv_data')
+    row_number = models.PositiveIntegerField()
+    data = models.JSONField()  # Store all row data as JSON
+    geometry_type = models.CharField(max_length=50, blank=True, null=True)
+    coordinates = models.TextField(blank=True, null=True)  # JSON string of coordinates
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['row_number']
+        indexes = [
+            models.Index(fields=['file_upload', 'row_number']),
+        ]
+    
+    def __str__(self):
+        return f"Row {self.row_number} - {self.file_upload.original_filename}"
+
+class ShapefileData(models.Model):
+    """Model to store parsed Shapefile data"""
+    file_upload = models.ForeignKey(FileUpload, on_delete=models.CASCADE, related_name='shapefile_data')
+    feature_id = models.PositiveIntegerField()
+    geometry_type = models.CharField(max_length=50)
+    coordinates = models.TextField()  # JSON string of coordinates
+    attributes = models.JSONField(default=dict)  # All attribute fields
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['feature_id']
+        indexes = [
+            models.Index(fields=['file_upload', 'feature_id']),
+        ]
+    
+    def __str__(self):
+        return f"Feature {self.feature_id} - {self.file_upload.original_filename}"
+
+# Keep existing KML models for backward compatibility
+class KMLFile(models.Model):
+    """Model to store uploaded KML files"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kml_files')
+    file = models.FileField(upload_to='kml/')
+    original_filename = models.CharField(max_length=255)
+    file_size = models.BigIntegerField()
+    uploaded_at = models.DateTimeField(default=timezone.now)
+    is_processed = models.BooleanField(default=False)
+    processing_status = models.CharField(max_length=50, default='pending')
+    error_message = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.original_filename} - {getattr(self.user, 'email', self.user)}"
+    
+    @property
+    def file_size_mb(self):
+        return round(self.file_size / (1024 * 1024), 2)
+
+class KMLData(models.Model):
+    """Enhanced model to store comprehensive parsed KML data"""
+    kml_file = models.ForeignKey(KMLFile, on_delete=models.CASCADE, related_name='parsed_data')
+    
+    # Basic fields (shown in preview)
+    kitta_number = models.CharField(max_length=100, blank=True, null=True)
+    owner_name = models.CharField(max_length=255, blank=True, null=True)
+    geometry_type = models.CharField(max_length=50)  # Point, Polygon, etc.
+    coordinates = models.TextField()  # JSON string of coordinates
+    area_hectares = models.DecimalField(max_digits=15, decimal_places=6, null=True, blank=True)
+    area_sqm = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    description = models.TextField(blank=True, null=True)
+    placemark_name = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Extended data (hidden in preview, included in CSV export)
+    extended_data = models.JSONField(default=dict, blank=True)  # All ExtendedData as JSON
+    time_begin = models.CharField(max_length=100, blank=True, null=True)
+    time_end = models.CharField(max_length=100, blank=True, null=True)
+    time_when = models.CharField(max_length=100, blank=True, null=True)
+    altitude = models.CharField(max_length=50, blank=True, null=True)
+    altitude_mode = models.CharField(max_length=50, blank=True, null=True)
+    tessellate = models.CharField(max_length=10, blank=True, null=True)
+    extrude = models.CharField(max_length=10, blank=True, null=True)
+    style_id = models.CharField(max_length=100, blank=True, null=True)
+    style_url = models.CharField(max_length=500, blank=True, null=True)
+    
+    # Address information
+    address = models.TextField(blank=True, null=True)
+    country_code = models.CharField(max_length=10, blank=True, null=True)
+    administrative_area = models.CharField(max_length=255, blank=True, null=True)
+    sub_administrative_area = models.CharField(max_length=255, blank=True, null=True)
+    locality = models.CharField(max_length=255, blank=True, null=True)
+    sub_locality = models.CharField(max_length=255, blank=True, null=True)
+    thoroughfare = models.CharField(max_length=255, blank=True, null=True)
+    postal_code = models.CharField(max_length=20, blank=True, null=True)
+    
+    # Contact information
+    phone_number = models.CharField(max_length=50, blank=True, null=True)
+    website = models.URLField(max_length=500, blank=True, null=True)
+    
+    # Additional KML elements
+    snippet = models.TextField(blank=True, null=True)
+    visibility = models.CharField(max_length=10, blank=True, null=True)
+    open_status = models.CharField(max_length=10, blank=True, null=True)  # 'open' field
+    atom_author = models.CharField(max_length=255, blank=True, null=True)
+    atom_link = models.URLField(max_length=500, blank=True, null=True)
+    xal_address_details = models.TextField(blank=True, null=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['kml_file', 'geometry_type']),
+            models.Index(fields=['kitta_number']),
+            models.Index(fields=['owner_name']),
+        ]
+    
+    def __str__(self):
+        return f"{self.placemark_name or 'Unnamed'} - {self.geometry_type} ({self.kml_file.original_filename})"
+    
+    @property
+    def has_extended_data(self):
+        """Check if this placemark has any extended data"""
+        return bool(self.extended_data)
+    
+    @property
+    def has_time_data(self):
+        """Check if this placemark has time information"""
+        return any([self.time_begin, self.time_end, self.time_when])
+    
+    @property
+    def has_address_data(self):
+        """Check if this placemark has address information"""
+        return any([self.address, self.locality, self.administrative_area])
+    
+    @property
+    def has_contact_data(self):
+        """Check if this placemark has contact information"""
+        return any([self.phone_number, self.website])
+    
+    def get_all_fields_for_csv(self):
+        """Get all fields as a dictionary for CSV export"""
+        return {
+            'Placemark Name': self.placemark_name or '',
+            'Kitta Number': self.kitta_number or '',
+            'Owner Name': self.owner_name or '',
+            'Geometry Type': self.geometry_type,
+            'Coordinates': self.coordinates,
+            'Area (Hectares)': float(self.area_hectares) if self.area_hectares else '',
+            'Area (Square Meters)': float(self.area_sqm) if self.area_sqm else '',
+            'Description': self.description or '',
+            'Snippet': self.snippet or '',
+            'Visibility': self.visibility or '',
+            'Open': self.open_status or '',
+            'Time Begin': self.time_begin or '',
+            'Time End': self.time_end or '',
+            'Time When': self.time_when or '',
+            'Altitude': self.altitude or '',
+            'Altitude Mode': self.altitude_mode or '',
+            'Tessellate': self.tessellate or '',
+            'Extrude': self.extrude or '',
+            'Style ID': self.style_id or '',
+            'Style URL': self.style_url or '',
+            'Address': self.address or '',
+            'Country Code': self.country_code or '',
+            'Administrative Area': self.administrative_area or '',
+            'Sub Administrative Area': self.sub_administrative_area or '',
+            'Locality': self.locality or '',
+            'Sub Locality': self.sub_locality or '',
+            'Thoroughfare': self.thoroughfare or '',
+            'Postal Code': self.postal_code or '',
+            'Phone Number': self.phone_number or '',
+            'Website': self.website or '',
+            'Atom Author': self.atom_author or '',
+            'Atom Link': self.atom_link or '',
+            'XAL Address Details': self.xal_address_details or '',
+            'Extended Data': json.dumps(self.extended_data) if self.extended_data else '',
+        }
+
+class DownloadLog(models.Model):
+    """Model to track download history"""
+    DOWNLOAD_TYPES = [
+        ('csv', 'CSV Export'),
+        ('shapefile', 'Shapefile Export'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='download_logs')
+    kml_file = models.ForeignKey(KMLFile, on_delete=models.CASCADE, related_name='downloads')
+    download_type = models.CharField(max_length=20, choices=DOWNLOAD_TYPES)
+    file_path = models.CharField(max_length=500)
+    file_size = models.BigIntegerField()
+    downloaded_at = models.DateTimeField(default=timezone.now)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-downloaded_at']
+    
+    def __str__(self):
+        return f"{self.download_type} - {self.kml_file.original_filename} - {self.downloaded_at}"

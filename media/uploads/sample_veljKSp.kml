@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample KML File</name>
+    <description>This is a sample KML file for testing</description>
+    <Placemark>
+      <name>Sample Point</name>
+      <description>This is a sample point</description>
+      <Point>
+        <coordinates>-122.4194,37.7749,0</coordinates>
+      </Point>
+      <ExtendedData>
+        <Data name="kitta_number">
+          <value>KML001</value>
+        </Data>
+        <Data name="owner_name">
+          <value>John Doe</value>
+        </Data>
+        <Data name="area_hectares">
+          <value>0.5</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+    <Placemark>
+      <name>Sample Polygon</name>
+      <description>This is a sample polygon</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -122.4194,37.7749,0
+              -122.4194,37.7849,0
+              -122.4094,37.7849,0
+              -122.4094,37.7749,0
+              -122.4194,37.7749,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+      <ExtendedData>
+        <Data name="kitta_number">
+          <value>KML002</value>
+        </Data>
+        <Data name="owner_name">
+          <value>Jane Smith</value>
+        </Data>
+        <Data name="area_hectares">
+          <value>1.2</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+  </Document>
+</kml>

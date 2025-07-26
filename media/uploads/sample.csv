@@ -1,0 +1,4 @@
+name,description,latitude,longitude,area_hectares,owner_name
+Point 1,This is point 1,37.7749,-122.4194,0.5,John Doe
+Point 2,This is point 2,37.7849,-122.4094,0.8,Jane Smith
+Point 3,This is point 3,37.7949,-122.3994,1.2,Bob Johnson
