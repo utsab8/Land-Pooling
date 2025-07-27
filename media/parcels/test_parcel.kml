@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <name>Test Parcel</name>
+      <description>Kitta No: 12345, District: Kathmandu, Municipality: Kathmandu Metro</description>
+      <ExtendedData>
+        <SimpleData name="kitta_no">12345</SimpleData>
+        <SimpleData name="district">Kathmandu</SimpleData>
+        <SimpleData name="municipality">Kathmandu Metro</SimpleData>
+        <SimpleData name="ward">1</SimpleData>
+        <SimpleData name="location">Thamel, Kathmandu</SimpleData>
+      </ExtendedData>
+      <Point>
+        <coordinates>85.3240,27.7172</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>

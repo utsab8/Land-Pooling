@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    UserDashboardView, UploadsView, MySurveyView, ViewMapView, HistoryView, HelpView, ProfileView
+    UserDashboardView, UploadsView, MySurveyView, HistoryView, HelpView, ProfileView
 )
 from .kml_views import (
     KMLUploadView, KMLPreviewView, KMLAjaxView, KMLListView, KMLDeleteView, KMLGeoJSONView
@@ -10,6 +10,7 @@ from .file_views import (
     FileExportView, FileDeleteView, FileShareView, SharedFileView, FileAjaxView, FileStatsView,
     CSVPreviewView, ShapefilePreviewView, CSVGeoJSONView, ShapefileGeoJSONView
 )
+from . import views, file_views, kml_views, geospatial_views
 
 urlpatterns = [
     path('', UserDashboardView.as_view(), name='user_dashboard'),
@@ -41,7 +42,7 @@ urlpatterns = [
     path('shared/<uuid:share_token>/', SharedFileView.as_view(), name='shared_file'),
 
     path('my-survey/', MySurveyView.as_view(), name='my_survey'),
-    path('view-map/', ViewMapView.as_view(), name='view_map'),
+
     path('history/', HistoryView.as_view(), name='history'),
     path('help/', HelpView.as_view(), name='help'),
     path('profile/', ProfileView.as_view(), name='profile'),
@@ -50,4 +51,12 @@ urlpatterns = [
 urlpatterns += [
     path('csv/geojson/<uuid:file_id>/', CSVGeoJSONView.as_view(), name='csv_geojson'),
     path('shapefile/geojson/<uuid:file_id>/', ShapefileGeoJSONView.as_view(), name='shapefile_geojson'),
+] 
+
+# Geospatial Dashboard URLs
+urlpatterns += [
+    path('geospatial-dashboard/', geospatial_views.GeospatialDashboardView.as_view(), name='geospatial_dashboard'),
+    path('upload-parcel/', geospatial_views.UploadParcelView.as_view(), name='upload_parcel'),
+    path('geojson-data/', geospatial_views.GeoJSONAPIView.as_view(), name='geojson_data'),
+    path('export-pdf/', geospatial_views.ExportPDFView.as_view(), name='export_pdf'),
 ] 

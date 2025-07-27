@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+        }
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗺️ Map Display Test</h1>
+    
+    <div class="test-info">
+        <h3>Test Information:</h3>
+        <p>This page tests if the map functionality works correctly.</p>
+        <p>You should see a map with a test marker in Nepal.</p>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="test-info">
+        <h3>Test Results:</h3>
+        <p id="test-results">Loading...</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        console.log('🚀 Starting map test...');
+        
+        // Test if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            document.getElementById('test-results').innerHTML = '❌ Leaflet not loaded!';
+            console.error('❌ Leaflet not loaded');
+        } else {
+            console.log('✅ Leaflet loaded successfully');
+            
+            try {
+                // Create map
+                const map = L.map('map').setView([27.7172, 85.3240], 8);
+                
+                // Add tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                // Add test marker
+                const marker = L.marker([27.7172, 85.3240]).addTo(map);
+                marker.bindPopup('🗺️ Map is working!').openPopup();
+                
+                console.log('✅ Map created successfully');
+                document.getElementById('test-results').innerHTML = '✅ Map is working correctly!';
+                
+            } catch (error) {
+                console.error('❌ Map creation failed:', error);
+                document.getElementById('test-results').innerHTML = '❌ Map creation failed: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 

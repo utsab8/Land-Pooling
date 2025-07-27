@@ -5,6 +5,178 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - GeoSurvey</title>
     <link rel="stylesheet" href="/static/admindashboard/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Enhanced Logout Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal {
+            background: white;
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .modal-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .modal-message {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modal-btn.cancel {
+            background: #f8f9fa;
+            color: #666;
+        }
+        
+        .modal-btn.cancel:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .modal-btn.confirm {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+        
+        .modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #ee5a52, #dc3545);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(238, 90, 82, 0.4);
+        }
+        
+        /* Enhanced Toast Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .toast {
+            background: white;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 300px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.success {
+            border-left-color: #28a745;
+        }
+        
+        .toast.error {
+            border-left-color: #dc3545;
+        }
+        
+        /* Enhanced Logout Button */
+        .logout-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .logout-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-30px) scale(0.9); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -33,19 +205,141 @@
         <main class="main-content">
             <div class="topbar">
                 <div class="topbar-title">Welcome to the Admin Dashboard</div>
-                <button class="logout-btn" onclick="logoutUser()">Logout</button>
+                <button class="logout-btn" onclick="showLogoutConfirmation()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
             <section class="dashboard-overview">
                 <p>Select a section from the sidebar to manage the system.</p>
             </section>
         </main>
     </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal">
+            <div class="modal-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <div class="modal-title">Confirm Logout</div>
+            <div class="modal-message">
+                Are you sure you want to logout from the admin panel? You'll need to sign in again to access the admin dashboard.
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="hideLogoutConfirmation()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="modal-btn confirm" onclick="performLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- CSRF Token for POST requests -->
+    {% csrf_token %}
+
     <script>
-    function logoutUser() {
-        localStorage.removeItem('access');
-        localStorage.removeItem('refresh');
-        window.location.href = '/api/account/login-page/';
+    // Enhanced Logout Functionality
+    function showLogoutConfirmation() {
+        document.getElementById('logoutModal').classList.add('show');
     }
+
+    function hideLogoutConfirmation() {
+        document.getElementById('logoutModal').classList.remove('show');
+    }
+
+    async function performLogout() {
+        const logoutBtn = document.querySelector('.logout-btn');
+        const confirmBtn = document.querySelector('.modal-btn.confirm');
+        
+        // Show loading state
+        logoutBtn.classList.add('loading');
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+        confirmBtn.disabled = true;
+
+        try {
+            // Clear any stored tokens
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            sessionStorage.clear();
+
+            // Show success message
+            showToast('Logging out successfully...', 'success');
+
+            // Small delay to show the message
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Redirect to logout URL
+            window.location.href = '/logout/';
+
+        } catch (error) {
+            console.error('Logout error:', error);
+            showToast('Logout failed. Please try again.', 'error');
+            
+            // Reset button state
+            logoutBtn.classList.remove('loading');
+            confirmBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+            confirmBtn.disabled = false;
+        }
+    }
+
+    // Enhanced Toast Notification System
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Show toast with enhanced animation
+        setTimeout(() => toast.classList.add('show'), 100);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 5000);
+    }
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close modal when clicking outside
+        document.getElementById('logoutModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideLogoutConfirmation();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideLogoutConfirmation();
+            }
+        });
+
+        // Keyboard shortcut for logout (Ctrl/Cmd + L)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+                e.preventDefault();
+                showLogoutConfirmation();
+            }
+        });
+    });
     </script>
 </body>
 </html> 

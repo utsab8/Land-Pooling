@@ -19,16 +19,23 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth.views import LogoutView
+from django.contrib.auth import logout
+from django.http import HttpResponseRedirect
+
+def custom_logout(request):
+    """Custom logout view that handles both GET and POST requests"""
+    logout(request)
+    return HttpResponseRedirect('/api/account/login-page/')
 
 urlpatterns = [
-    # Step 1: Root URL redirects to login page
-    path('', lambda request: redirect('/login/'), name='root'),
+    # Root URL redirects to login page
+    path('', lambda request: redirect('/api/account/login-page/'), name='root'),
     
-    # Step 2: Login page (first step for users)
+    # Authentication routes
     path('login/', lambda request: redirect('/api/account/login-page/'), name='login_redirect'),
-    
-    # Step 3: Signup page (second step for new users)
     path('signup/', lambda request: redirect('/api/account/signup-page/'), name='signup_redirect'),
+    path('logout/', custom_logout, name='logout'),
     
     # Django admin and authentication
     path('accounts/login/', lambda request: redirect('/api/account/login-page/')),  # Fix for LoginRequiredMixin default
@@ -37,10 +44,10 @@ urlpatterns = [
     # API endpoints
     path('api/account/', include('account.urls')),
     
-    # Step 4: User dashboard (after login)
+    # User dashboard (after login)
     path('dashboard/', include('userdashboard.urls')),
     
-    # Step 5: Admin dashboard (for admin users)
+    # Admin dashboard (for admin users)
     path('admin-dashboard/', include('admindashboard.urls')),
 ]
 

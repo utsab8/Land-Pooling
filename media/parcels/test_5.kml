@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <name>Test LineString</name>
+      <description>Kitta No: 33333, District: Kirtipur</description>
+      <LineString>
+        <coordinates>85.3240,27.7172 85.3340,27.7172,100 85.3440,27.7072</coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

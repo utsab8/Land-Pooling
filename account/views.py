@@ -6,19 +6,31 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSignupSerializer, UserLoginSerializer
 from .models import User
 from django.contrib.auth import login as django_login
+from django.conf import settings
 
 # Render login page
 from django.views import View
 
 class LoginPageView(View):
     def get(self, request):
-        next_url = request.GET.get('next', '/dashboard/profile/')
+        # If user is already authenticated, redirect to appropriate dashboard
         if request.user.is_authenticated:
-            return redirect(next_url)
+            if request.user.is_staff:
+                return redirect('/admin-dashboard/')
+            else:
+                return redirect('/dashboard/')
+        
+        next_url = request.GET.get('next', '/dashboard/')
         return render(request, 'account/login.html', {'next': next_url})
 
 class SignupPageView(View):
     def get(self, request):
+        # If user is already authenticated, redirect to appropriate dashboard
+        if request.user.is_authenticated:
+            if request.user.is_staff:
+                return redirect('/admin-dashboard/')
+            else:
+                return redirect('/dashboard/')
         return render(request, 'account/signup.html')
 
 class SignupView(APIView):
@@ -42,11 +54,17 @@ class LoginView(APIView):
             # Log in the user for session-based auth
             django_login(request, user)
             refresh = RefreshToken.for_user(user)
-            # Admin credentials check
-            if user.email == 'acharyautsab390@gmail.com' and request.data.get('password') == 'utsab12@':
+            
+            # Determine redirect URL based on user type and permissions
+            next_url = request.data.get('next', '/dashboard/')
+            
+            # Check if user is admin/staff
+            if user.is_staff:
                 redirect_url = '/admin-dashboard/'
             else:
-                redirect_url = request.data.get('next') or '/dashboard/'
+                # Regular users go to user dashboard
+                redirect_url = next_url if next_url != '/api/account/login-page/' else '/dashboard/'
+            
             return Response({
                 'user': {
                     'email': user.email,

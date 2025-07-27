@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <name>Test Point 3D</name>
+      <description>Kitta No: 67890, District: Lalitpur</description>
+      <Point>
+        <coordinates>85.3340,27.6672,100</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>

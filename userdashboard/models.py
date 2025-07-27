@@ -4,6 +4,10 @@ from django.utils import timezone
 import uuid
 import os
 import json
+from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import JSONField
+
+User = get_user_model()
 
 class FileUpload(models.Model):
     """Enhanced model for all file uploads with conversion tracking"""
@@ -422,3 +426,84 @@ class DownloadLog(models.Model):
     
     def __str__(self):
         return f"{self.download_type} - {self.kml_file.original_filename} - {self.downloaded_at}"
+
+class ContactFormSubmission(models.Model):
+    """Model to store contact form submissions"""
+    SUBJECT_CHOICES = [
+        ('bug', 'Bug Report'),
+        ('feature', 'Feature Request'),
+        ('support', 'Technical Support'),
+        ('feedback', 'General Feedback'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contact_submissions')
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    subject = models.CharField(max_length=20, choices=SUBJECT_CHOICES)
+    message = models.TextField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    is_resolved = models.BooleanField(default=False)
+    admin_notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-submitted_at']
+        verbose_name = 'Contact Form Submission'
+        verbose_name_plural = 'Contact Form Submissions'
+    
+    def __str__(self):
+        return f"{self.name} - {self.subject} ({self.submitted_at.strftime('%Y-%m-%d %H:%M')})"
+
+class UploadedParcel(models.Model):
+    """Model for storing uploaded geospatial parcel data with JSON geometry"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_parcels')
+    name = models.CharField(max_length=255, blank=True, verbose_name="Parcel Name")
+    kitta_no = models.CharField(max_length=100, blank=True, verbose_name="Kitta Number")
+    sn_no = models.CharField(max_length=100, blank=True, verbose_name="SN Number")
+    district = models.CharField(max_length=255, blank=True, verbose_name="District")
+    municipality = models.CharField(max_length=255, blank=True, verbose_name="Municipality")
+    ward = models.CharField(max_length=100, blank=True, verbose_name="Ward")
+    location = models.CharField(max_length=255, blank=True, verbose_name="Location")
+    geometry = models.JSONField(blank=True, null=True, verbose_name="Geometry (GeoJSON)")
+    coordinates = models.TextField(blank=True, null=True, verbose_name="Coordinates")
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Uploaded At")
+    file_type = models.CharField(max_length=20, choices=[
+        ('KML', 'KML File'),
+        ('CSV', 'CSV File'),
+        ('SHP', 'Shapefile'),
+    ], verbose_name="File Type")
+    original_file = models.FileField(upload_to='parcels/', blank=True, null=True, verbose_name="Original File")
+    
+    class Meta:
+        verbose_name = "Uploaded Parcel"
+        verbose_name_plural = "Uploaded Parcels"
+        ordering = ['-uploaded_at']
+        indexes = [
+            models.Index(fields=['user', 'uploaded_at']),
+            models.Index(fields=['district', 'municipality']),
+            models.Index(fields=['kitta_no']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.kitta_no} ({self.district})"
+    
+    def get_geojson(self):
+        """Return GeoJSON representation of the parcel"""
+        if self.geometry:
+            return {
+                'type': 'Feature',
+                'geometry': self.geometry,
+                'properties': {
+                    'id': str(self.id),
+                    'name': self.name,
+                    'kitta_no': self.kitta_no,
+                    'sn_no': self.sn_no,
+                    'district': self.district,
+                    'municipality': self.municipality,
+                    'ward': self.ward,
+                    'location': self.location,
+                    'file_type': self.file_type,
+                    'uploaded_at': self.uploaded_at.isoformat(),
+                }
+            }
+        return None

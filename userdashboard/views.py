@@ -8,6 +8,7 @@ from account.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from .models import ContactFormSubmission
 import json
 import re
 import os
@@ -20,6 +21,9 @@ from django.core.files.base import ContentFile
 
 class UserDashboardView(LoginRequiredMixin, View):
     def get(self, request):
+        # Ensure user is authenticated
+        if not request.user.is_authenticated:
+            return redirect('/api/account/login-page/')
         return render(request, 'userdashboard/dashboard.html')
 
 class UploadsView(LoginRequiredMixin, View):
@@ -268,9 +272,7 @@ class MySurveyView(LoginRequiredMixin, View):
     def get(self, request):
         return render(request, 'userdashboard/my_survey.html')
 
-class ViewMapView(LoginRequiredMixin, View):
-    def get(self, request):
-        return render(request, 'userdashboard/view_map.html')
+
 
 class HistoryView(LoginRequiredMixin, View):
     def get(self, request):
@@ -278,7 +280,108 @@ class HistoryView(LoginRequiredMixin, View):
 
 class HelpView(LoginRequiredMixin, View):
     def get(self, request):
-        return render(request, 'userdashboard/help.html')
+        # Get any success/error messages from session
+        contact_msg = request.session.get('contact_msg', '')
+        contact_status = request.session.get('contact_status', '')
+        
+        # Get user's contact form history
+        contact_history = ContactFormSubmission.objects.filter(user=request.user).order_by('-submitted_at')[:5]
+        # Get recent activities from session
+        recent_activities = request.session.get('recent_activities', [])[::-1][:20]
+        # Clear messages from session after retrieving
+        if 'contact_msg' in request.session:
+            del request.session['contact_msg']
+        if 'contact_status' in request.session:
+            del request.session['contact_status']
+        
+        return render(request, 'userdashboard/help.html', {
+            'contact_msg': contact_msg,
+            'contact_status': contact_status,
+            'contact_history': contact_history,
+            'recent_activities': recent_activities,
+        })
+    
+    def post(self, request):
+        """Handle contact form submission"""
+        if 'contact_submit' in request.POST:
+            try:
+                # Get form data
+                name = request.POST.get('name', '').strip()
+                email = request.POST.get('email', '').strip()
+                subject = request.POST.get('subject', '').strip()
+                message = request.POST.get('message', '').strip()
+                
+                # Validate form data
+                if not name or len(name) < 2:
+                    msg = 'Please enter a valid name (at least 2 characters).'
+                    status = 'error'
+                elif not email or not self._is_valid_email(email):
+                    msg = 'Please enter a valid email address.'
+                    status = 'error'
+                elif not subject:
+                    msg = 'Please select a subject.'
+                    status = 'error'
+                elif not message or len(message) < 10:
+                    msg = 'Please enter a message (at least 10 characters).'
+                    status = 'error'
+                else:
+                    # Process the contact form (you can add email sending logic here)
+                    self._process_contact_form(name, email, subject, message, request.user)
+                    msg = 'Thank you for your message! We will get back to you soon.'
+                    status = 'success'
+                    
+                    # Add activity to user's history
+                    self._add_activity(request, f"Submitted contact form: {subject}")
+                
+            except Exception as e:
+                msg = f'Error submitting form: {str(e)}'
+                status = 'error'
+            
+            # Store message in session
+            request.session['contact_msg'] = msg
+            request.session['contact_status'] = status
+            
+            # Redirect back to help page
+            return redirect('help')
+        
+        return redirect('help')
+    
+    def _is_valid_email(self, email):
+        """Validate email format"""
+        import re
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, email) is not None
+    
+    def _process_contact_form(self, name, email, subject, message, user):
+        """Process contact form submission"""
+        # Save to database
+        ContactFormSubmission.objects.create(
+            user=user,
+            name=name,
+            email=email,
+            subject=subject,
+            message=message
+        )
+        
+        # Log the submission
+        print(f"Contact Form Submission:")
+        print(f"  From: {name} ({email})")
+        print(f"  Subject: {subject}")
+        print(f"  Message: {message}")
+        print(f"  User: {user.email}")
+        print(f"  Timestamp: {timezone.now()}")
+        
+        # TODO: Add email notification logic here
+        # You can integrate with Django's email backend to send notifications
+    
+    def _add_activity(self, request, activity):
+        """Add activity to user's session"""
+        activities = request.session.get('recent_activities', [])
+        activities.append(f"{timezone.now().strftime('%Y-%m-%d %H:%M')} - {activity}")
+        # Keep only last 50 activities
+        if len(activities) > 50:
+            activities = activities[-50:]
+        request.session['recent_activities'] = activities
 
 class ProfileView(LoginRequiredMixin, View):
     def get(self, request):
