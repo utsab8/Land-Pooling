@@ -1,4 +1,7 @@
-{% extends 'userdashboard/dashboard.html' %}
+{% extends 'userdashboard/base.html' %}
+{% load static %}
+
+{% block title %}KML Preview - GeoSurvey{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/userdashboard/kml_preview.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />

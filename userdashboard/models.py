@@ -320,7 +320,6 @@ class KMLData(models.Model):
     
     # Contact information
     phone_number = models.CharField(max_length=50, blank=True, null=True)
-    website = models.URLField(max_length=500, blank=True, null=True)
     
     # Additional KML elements
     snippet = models.TextField(blank=True, null=True)
@@ -363,7 +362,7 @@ class KMLData(models.Model):
     @property
     def has_contact_data(self):
         """Check if this placemark has contact information"""
-        return any([self.phone_number, self.website])
+        return bool(self.phone_number)
     
     def get_all_fields_for_csv(self):
         """Get all fields as a dictionary for CSV export"""
@@ -397,7 +396,6 @@ class KMLData(models.Model):
             'Thoroughfare': self.thoroughfare or '',
             'Postal Code': self.postal_code or '',
             'Phone Number': self.phone_number or '',
-            'Website': self.website or '',
             'Atom Author': self.atom_author or '',
             'Atom Link': self.atom_link or '',
             'XAL Address Details': self.xal_address_details or '',

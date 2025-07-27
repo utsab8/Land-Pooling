@@ -116,8 +116,10 @@ class KMLParser:
             address_data = self._extract_address_data(placemark)
             
             # Extract phone number and website
-            contact_data = self._extract_contact_data(placemark)
-            
+            contact_data = {
+                'phone_number': None,
+            }
+        
             # Combine all data
             comprehensive_data = {
                 # Basic fields (shown in preview)
@@ -150,7 +152,7 @@ class KMLParser:
                 'thoroughfare': address_data.get('thoroughfare'),
                 'postal_code': address_data.get('postal_code'),
                 'phone_number': contact_data.get('phone_number'),
-                'website': contact_data.get('website'),
+                'website': '', # Removed website field
                 'snippet': self._get_element_text(placemark, 'kml:snippet'),
                 'visibility': self._get_element_text(placemark, 'kml:visibility'),
                 'open': self._get_element_text(placemark, 'kml:open'),
@@ -280,19 +282,17 @@ class KMLParser:
         return address_data
     
     def _extract_contact_data(self, placemark):
-        """Extract contact information"""
-        contact_data = {}
+        """Extract contact information from placemark"""
+        contact_data = {
+            'phone_number': None,
+        }
         
-        # Look for phone numbers in description or extended data
+        # Extract phone number from description
         description = self._get_element_text(placemark, 'kml:description')
         if description:
             phone_match = re.search(r'phone[:\s]*([+\d\s\-\(\)]+)', description, re.IGNORECASE)
             if phone_match:
                 contact_data['phone_number'] = phone_match.group(1).strip()
-            
-            website_match = re.search(r'website[:\s]*(https?://[^\s]+)', description, re.IGNORECASE)
-            if website_match:
-                contact_data['website'] = website_match.group(1).strip()
         
         return contact_data
 
@@ -565,7 +565,7 @@ class KMLExporter:
                         'thoroughfare': kml_data.thoroughfare or '',
                         'postal_code': kml_data.postal_code or '',
                         'phone_number': kml_data.phone_number or '',
-                        'website': kml_data.website or '',
+                        'website': '', # Removed website field
                         'atom_author': kml_data.atom_author or '',
                         'atom_link': kml_data.atom_link or '',
                         'xal_address_details': kml_data.xal_address_details or '',

@@ -10,7 +10,7 @@ from .file_views import (
     FileExportView, FileDeleteView, FileShareView, SharedFileView, FileAjaxView, FileStatsView,
     CSVPreviewView, ShapefilePreviewView, CSVGeoJSONView, ShapefileGeoJSONView
 )
-from . import views, file_views, kml_views, geospatial_views
+from . import views, file_views, kml_views
 
 urlpatterns = [
     path('', UserDashboardView.as_view(), name='user_dashboard'),
@@ -51,12 +51,4 @@ urlpatterns = [
 urlpatterns += [
     path('csv/geojson/<uuid:file_id>/', CSVGeoJSONView.as_view(), name='csv_geojson'),
     path('shapefile/geojson/<uuid:file_id>/', ShapefileGeoJSONView.as_view(), name='shapefile_geojson'),
-] 
-
-# Geospatial Dashboard URLs
-urlpatterns += [
-    path('geospatial-dashboard/', geospatial_views.GeospatialDashboardView.as_view(), name='geospatial_dashboard'),
-    path('upload-parcel/', geospatial_views.UploadParcelView.as_view(), name='upload_parcel'),
-    path('geojson-data/', geospatial_views.GeoJSONAPIView.as_view(), name='geojson_data'),
-    path('export-pdf/', geospatial_views.ExportPDFView.as_view(), name='export_pdf'),
 ] 

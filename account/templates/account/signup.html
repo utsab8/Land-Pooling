@@ -4,40 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - GeoSurvey</title>
-    <link rel="stylesheet" href="/static/account/signup.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'account/signup.css' %}">
 </head>
 <body>
     <div class="container">
         <form id="signupForm" class="form">
-            <h2>Sign Up</h2>
+            <h2>Create Account</h2>
             <div class="input-group">
                 <label for="full_name">Full Name</label>
-                <input type="text" id="full_name" name="full_name" required>
+                <input type="text" id="full_name" name="full_name" required placeholder="Enter your full name">
             </div>
             <div class="input-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
             </div>
             <div class="input-group">
                 <label for="phone_number">Phone Number</label>
-                <input type="tel" id="phone_number" name="phone_number" required>
+                <input type="tel" id="phone_number" name="phone_number" required placeholder="Enter your phone number">
             </div>
             <div class="input-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required placeholder="Create a strong password">
+                <div class="password-strength">
+                    <div class="strength-bar" id="strengthBar"></div>
+                </div>
+                <div class="password-requirements" id="passwordRequirements">
+                    <div class="requirement" id="req-length">At least 8 characters</div>
+                    <div class="requirement" id="req-uppercase">One uppercase letter</div>
+                    <div class="requirement" id="req-lowercase">One lowercase letter</div>
+                    <div class="requirement" id="req-number">One number</div>
+                    <div class="requirement" id="req-special">One special character</div>
+                </div>
             </div>
             <div class="input-group">
                 <label for="confirm_password">Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
+                <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm your password">
             </div>
-            <button type="submit">Sign Up</button>
+            <button type="submit">Create Account</button>
             <div id="signupError" class="error"></div>
         </form>
         <div class="login-link">
             <span>Already have an account?</span>
-            <a href="/api/account/login-page/" class="login-btn">Login</a>
+            <a href="/api/account/login-page/" class="login-btn">Sign In</a>
         </div>
     </div>
-    <script src="/static/account/signup.js"></script>
+    <script src="{% static 'account/signup.js' %}"></script>
 </body>
 </html> 

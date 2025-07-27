@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - GeoSurvey</title>
-    <link rel="stylesheet" href="/static/account/login.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'account/login.css' %}">
 </head>
 <body>
     <div class="container">
@@ -27,6 +28,6 @@
             <a href="/api/account/signup-page/" class="signup-btn">Sign Up</a>
         </div>
     </div>
-    <script src="/static/account/login.js"></script>
+    <script src="{% static 'account/login.js' %}"></script>
 </body>
 </html> 

@@ -1,14 +1,18 @@
-from django.shortcuts import render, redirect
-from django.views import View
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash, logout
 from django.http import JsonResponse, HttpResponse
-from account.models import User
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from .models import ContactFormSubmission
+from .models import FileUpload, KMLData, UploadedParcel, KMLFile, DownloadLog, ContactFormSubmission
 import json
 import re
 import os
@@ -23,8 +27,73 @@ class UserDashboardView(LoginRequiredMixin, View):
     def get(self, request):
         # Ensure user is authenticated
         if not request.user.is_authenticated:
-            return redirect('/api/account/login-page/')
-        return render(request, 'userdashboard/dashboard.html')
+            return redirect('login')
+        
+        try:
+            # Count total files
+            total_files = FileUpload.objects.filter(user=request.user).count()
+            
+            # Count total surveys (KML files)
+            total_surveys = KMLData.objects.filter(kml_file__user=request.user).count()
+            
+            # Count recent uploads (last 7 days)
+            from django.utils import timezone
+            from datetime import timedelta
+            recent_date = timezone.now() - timedelta(days=7)
+            recent_uploads = FileUpload.objects.filter(
+                user=request.user, 
+                created_at__gte=recent_date
+            ).count()
+            
+            # Count total parcels
+            total_parcels = UploadedParcel.objects.filter(user=request.user).count()
+            
+            # Get recent activities (last 5 activities)
+            recent_activities = []
+            
+            # Add file upload activities
+            recent_files = FileUpload.objects.filter(user=request.user).order_by('-created_at')[:3]
+            for file in recent_files:
+                recent_activities.append({
+                    'type': 'upload',
+                    'description': f'Uploaded {file.original_filename}',
+                    'timestamp': file.created_at
+                })
+            
+            # Add KML activities
+            recent_kml = KMLData.objects.filter(kml_file__user=request.user).order_by('-created_at')[:2]
+            for kml in recent_kml:
+                recent_activities.append({
+                    'type': 'survey',
+                    'description': f'Created survey: {kml.placemark_name or kml.kitta_number or "KML Data"}',
+                    'timestamp': kml.created_at
+                })
+            
+            # Sort activities by timestamp
+            recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+            recent_activities = recent_activities[:5]
+            
+            context = {
+                'total_files': total_files,
+                'total_surveys': total_surveys,
+                'recent_uploads': recent_uploads,
+                'total_parcels': total_parcels,
+                'recent_activities': recent_activities,
+            }
+            
+            return render(request, 'userdashboard/dashboard.html', context)
+            
+        except Exception as e:
+            print(f"Dashboard error: {e}")
+            # Return a simple context if there's an error
+            context = {
+                'total_files': 0,
+                'total_surveys': 0,
+                'recent_uploads': 0,
+                'total_parcels': 0,
+                'recent_activities': [],
+            }
+            return render(request, 'userdashboard/dashboard.html', context)
 
 class UploadsView(LoginRequiredMixin, View):
     def get(self, request):
@@ -270,13 +339,188 @@ class FilePreviewView(LoginRequiredMixin, View):
 
 class MySurveyView(LoginRequiredMixin, View):
     def get(self, request):
-        return render(request, 'userdashboard/my_survey.html')
+        try:
+            # Get user's KML surveys
+            kml_surveys = KMLData.objects.filter(kml_file__user=request.user).order_by('-created_at')
+            
+            # Get user's file uploads that are surveys
+            file_surveys = FileUpload.objects.filter(
+                user=request.user,
+                file_type__in=['kml', 'csv', 'shapefile']
+            ).order_by('-created_at')
+            
+            # Get user's parcels
+            parcels = UploadedParcel.objects.filter(user=request.user).order_by('-created_at')
+            
+            # Count statistics
+            total_surveys = kml_surveys.count() + file_surveys.count()
+            total_parcels = parcels.count()
+            
+            # Get recent survey activities
+            recent_surveys = []
+            
+            # Add KML surveys
+            for kml in kml_surveys[:5]:
+                recent_surveys.append({
+                    'type': 'kml',
+                    'name': kml.placemark_name or kml.kitta_number or f"KML Survey {kml.id}",
+                    'date': kml.created_at,
+                    'status': 'Completed',
+                    'details': f"Coordinates: {kml.latitude}, {kml.longitude}" if kml.latitude and kml.longitude else "No coordinates"
+                })
+            
+            # Add file surveys
+            for file in file_surveys[:5]:
+                recent_surveys.append({
+                    'type': file.file_type,
+                    'name': file.original_filename,
+                    'date': file.created_at,
+                    'status': 'Uploaded',
+                    'details': f"File size: {file.file.size} bytes" if file.file else "No file"
+                })
+            
+            # Sort by date
+            recent_surveys.sort(key=lambda x: x['date'], reverse=True)
+            
+            context = {
+                'kml_surveys': kml_surveys[:10],  # Show last 10
+                'file_surveys': file_surveys[:10],  # Show last 10
+                'parcels': parcels[:10],  # Show last 10
+                'total_surveys': total_surveys,
+                'total_parcels': total_parcels,
+                'recent_surveys': recent_surveys[:10],
+            }
+            
+            return render(request, 'userdashboard/my_survey.html', context)
+            
+        except Exception as e:
+            print(f"MySurvey error: {e}")
+            context = {
+                'kml_surveys': [],
+                'file_surveys': [],
+                'parcels': [],
+                'total_surveys': 0,
+                'total_parcels': 0,
+                'recent_surveys': [],
+            }
+            return render(request, 'userdashboard/my_survey.html', context)
 
 
 
 class HistoryView(LoginRequiredMixin, View):
     def get(self, request):
-        return render(request, 'userdashboard/history.html')
+        try:
+            # Get user's file upload history
+            file_history = FileUpload.objects.filter(user=request.user).order_by('-created_at')
+            
+            # Get user's KML upload history
+            kml_history = KMLData.objects.filter(kml_file__user=request.user).order_by('-created_at')
+            
+            # Get download history
+            download_history = DownloadLog.objects.filter(user=request.user).order_by('-downloaded_at')
+            
+            # Get contact form submissions
+            contact_history = ContactFormSubmission.objects.filter(user=request.user).order_by('-submitted_at')
+            
+            # Get recent activities from session
+            recent_activities = request.session.get('recent_activities', [])[::-1][:50]
+            
+            # Combine all activities
+            all_activities = []
+            
+            # Add file uploads
+            for file in file_history[:20]:
+                all_activities.append({
+                    'type': 'upload',
+                    'title': f'Uploaded {file.original_filename}',
+                    'description': f'File type: {file.file_type}, Size: {file.file.size if file.file else "Unknown"} bytes',
+                    'timestamp': file.created_at,
+                    'icon': '📁'
+                })
+            
+            # Add KML activities
+            for kml in kml_history[:20]:
+                all_activities.append({
+                    'type': 'survey',
+                    'title': f'Created survey: {kml.placemark_name or kml.kitta_number or "KML Data"}',
+                    'description': f'Coordinates: {kml.latitude}, {kml.longitude}' if kml.latitude and kml.longitude else 'No coordinates',
+                    'timestamp': kml.created_at,
+                    'icon': '🗺️'
+                })
+            
+            # Add downloads
+            for download in download_history[:20]:
+                all_activities.append({
+                    'type': 'download',
+                    'title': f'Downloaded {download.file.original_filename if download.file else "file"}',
+                    'description': f'Downloaded at {download.downloaded_at.strftime("%Y-%m-%d %H:%M")}',
+                    'timestamp': download.downloaded_at,
+                    'icon': '⬇️'
+                })
+            
+            # Add contact submissions
+            for contact in contact_history[:10]:
+                all_activities.append({
+                    'type': 'contact',
+                    'title': f'Contact form: {contact.subject}',
+                    'description': f'Submitted on {contact.submitted_at.strftime("%Y-%m-%d %H:%M")}',
+                    'timestamp': contact.submitted_at,
+                    'icon': '📧'
+                })
+            
+            # Add session activities
+            for activity in recent_activities:
+                if isinstance(activity, dict) and 'timestamp' in activity:
+                    all_activities.append({
+                        'type': 'session',
+                        'title': activity.get('action', 'Activity'),
+                        'description': activity.get('description', ''),
+                        'timestamp': activity.get('timestamp', timezone.now()),
+                        'icon': '👤'
+                    })
+            
+            # Sort by timestamp
+            all_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+            
+            # Paginate activities
+            paginator = Paginator(all_activities, 20)
+            page_number = request.GET.get('page', 1)
+            page_obj = paginator.get_page(page_number)
+            
+            # Calculate statistics
+            total_uploads = file_history.count()
+            total_surveys = kml_history.count()
+            total_downloads = download_history.count()
+            total_contacts = contact_history.count()
+            
+            context = {
+                'file_history': file_history[:10],
+                'kml_history': kml_history[:10],
+                'download_history': download_history[:10],
+                'contact_history': contact_history[:5],
+                'activities': page_obj,
+                'total_uploads': total_uploads,
+                'total_surveys': total_surveys,
+                'total_downloads': total_downloads,
+                'total_contacts': total_contacts,
+            }
+            
+            return render(request, 'userdashboard/history.html', context)
+            
+        except Exception as e:
+            print(f"History error: {e}")
+            context = {
+                'file_history': [],
+                'kml_history': [],
+                'download_history': [],
+                'contact_history': [],
+                'activities': [],
+                'total_uploads': 0,
+                'total_surveys': 0,
+                'total_downloads': 0,
+                'total_contacts': 0,
+            }
+            return render(request, 'userdashboard/history.html', context)
 
 class HelpView(LoginRequiredMixin, View):
     def get(self, request):
@@ -385,246 +629,257 @@ class HelpView(LoginRequiredMixin, View):
 
 class ProfileView(LoginRequiredMixin, View):
     def get(self, request):
-        # Get recent activities from session
-        recent_activities = request.session.get('recent_activities', [])
-        
-        # Calculate profile completion percentage
-        completion_fields = [
-            bool(request.user.full_name),
-            bool(request.user.phone_number),
-            bool(request.user.linkedin),
-            bool(request.user.github),
-            bool(request.user.avatar and request.user.avatar.url != '/media/avatars/default.png')
-        ]
-        completion_percentage = int((sum(completion_fields) / len(completion_fields)) * 100)
-        
-        # Get user statistics
-        user_stats = {
-            'days_since_joined': (timezone.now() - request.user.date_joined).days,
-            'last_login': request.user.last_login,
-            'is_active': request.user.is_active,
-            'is_staff': request.user.is_staff,
-        }
-        
-        return render(request, 'userdashboard/profile.html', {
-            'user': request.user,
-            'recent_activities': recent_activities[::-1][:10],  # Show last 10 activities
-            'completion_percentage': completion_percentage,
-            'user_stats': user_stats,
-            'profile_msg': request.session.get('profile_msg', ''),
-            'password_msg': request.session.get('password_msg', ''),
-        })
+        try:
+            total_files = FileUpload.objects.filter(user=request.user).count()
+            total_surveys = KMLData.objects.filter(kml_file__user=request.user).count()
+            
+            # Calculate profile completion percentage
+            personal_fields = [
+                bool(request.user.full_name),
+                bool(request.user.phone_number),
+                bool(request.user.date_of_birth),
+                bool(request.user.address),
+                bool(request.user.city),
+                bool(request.user.state),
+                bool(request.user.country),
+                bool(request.user.postal_code),
+                bool(request.user.avatar and request.user.avatar.url)
+            ]
+            
+            social_fields = [
+                bool(request.user.github),
+                bool(request.user.linkedin),
+                bool(request.user.facebook)
+            ]
+            
+            personal_completion = int((sum(personal_fields) / len(personal_fields)) * 100)
+            social_completion = int((sum(social_fields) / len(social_fields)) * 100)
+            
+            # Overall completion: 80% for personal info + 20% for social links
+            if personal_completion == 100 and social_completion == 100:
+                profile_completion = 100
+                is_verified = True
+            elif personal_completion == 100:
+                profile_completion = 80
+                is_verified = False
+            else:
+                profile_completion = personal_completion
+                is_verified = False
+            
+            # Get recent activities from session
+            recent_activities = request.session.get('recent_activities', [])
+            
+            context = {
+                'user': request.user,
+                'total_files': total_files,
+                'total_surveys': total_surveys,
+                'profile_completion': profile_completion,
+                'personal_completion': personal_completion,
+                'social_completion': social_completion,
+                'is_verified': is_verified,
+                'recent_activities': recent_activities[::-1][:10],
+            }
+            
+            return render(request, 'userdashboard/profile.html', context)
+            
+        except Exception as e:
+            print(f"Profile error: {e}")
+            context = {
+                'user': request.user,
+                'total_files': 0,
+                'total_surveys': 0,
+                'profile_completion': 0,
+                'personal_completion': 0,
+                'social_completion': 0,
+                'is_verified': False,
+                'recent_activities': [],
+            }
+            return render(request, 'userdashboard/profile.html', context)
 
     def post(self, request):
         user = request.user
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         # Profile update
-        if 'avatar' in request.FILES or 'full_name' in request.POST or 'linkedin' in request.POST or 'github' in request.POST:
+        if 'update_profile' in request.POST:
             try:
-                # Validate and clean data
+                # Get form data
                 full_name = request.POST.get('full_name', '').strip()
-                phone_number = request.POST.get('phone_number', '').strip()
-                linkedin = request.POST.get('linkedin', '').strip()
-                github = request.POST.get('github', '').strip()
+                phone = request.POST.get('phone_number', '').strip()
+                date_of_birth = request.POST.get('date_of_birth', '').strip()
+                address = request.POST.get('address', '').strip()
+                city = request.POST.get('city', '').strip()
+                state = request.POST.get('state', '').strip()
+                country = request.POST.get('country', '').strip()
+                postal_code = request.POST.get('postal_code', '').strip()
                 
-                # Enhanced validation
+                # Validation
                 if full_name and len(full_name) < 2:
-                    msg = 'Full name must be at least 2 characters long.'
+                    messages.error(request, 'Full name must be at least 2 characters long.')
                 elif full_name and len(full_name) > 150:
-                    msg = 'Full name must be less than 150 characters.'
-                elif phone_number and not self._is_valid_phone(phone_number):
-                    msg = 'Please enter a valid phone number.'
-                elif linkedin and not self._is_valid_url(linkedin):
-                    msg = 'Please enter a valid LinkedIn URL.'
-                elif github and not self._is_valid_url(github):
-                    msg = 'Please enter a valid GitHub URL.'
+                    messages.error(request, 'Full name must be less than 150 characters.')
+                elif phone and not self._is_valid_phone(phone):
+                    messages.error(request, 'Please enter a valid phone number.')
                 else:
                     # Update user data
                     user.full_name = full_name
-                    user.phone_number = phone_number
-                    user.linkedin = linkedin
-                    user.github = github
+                    user.phone_number = phone
+                    user.date_of_birth = date_of_birth if date_of_birth else None
+                    user.address = address
+                    user.city = city
+                    user.state = state
+                    user.country = country
+                    user.postal_code = postal_code
                     
                     # Handle avatar upload
                     avatar = request.FILES.get('avatar')
                     if avatar:
-                        # Enhanced file validation
                         if avatar.size > 5 * 1024 * 1024:  # 5MB limit
-                            msg = 'Avatar file size must be less than 5MB.'
+                            messages.error(request, 'Avatar file size must be less than 5MB.')
                         elif not avatar.content_type.startswith('image/'):
-                            msg = 'Please upload a valid image file (JPG, PNG, GIF).'
+                            messages.error(request, 'Please upload a valid image file (JPG, PNG, GIF).')
                         elif not self._is_valid_image_extension(avatar.name):
-                            msg = 'Please upload a valid image file (JPG, PNG, GIF).'
+                            messages.error(request, 'Please upload a valid image file (JPG, PNG, GIF).')
                         else:
                             user.avatar = avatar
                     
                     user.save()
-                    msg = 'Profile updated successfully!'
-                    self._add_activity(request, f"Updated profile information")
-                    
-                    # Clear any previous error messages
-                    request.session.pop('profile_msg', None)
-                    request.session['profile_msg'] = msg
+                    messages.success(request, 'Profile updated successfully!')
+                    self._add_activity(request, "Updated profile information")
                     
             except Exception as e:
-                msg = f'Error updating profile: {str(e)}'
-                request.session['profile_msg'] = msg
+                messages.error(request, f'Error updating profile: {str(e)}')
             
-            if is_ajax:
-                return JsonResponse({'status': 'success' if 'successfully' in msg else 'error', 'message': msg})
-            return self.get(request)
+            return redirect('profile')
+        
+        elif 'update_social' in request.POST:
+            try:
+                # Get social links
+                github = request.POST.get('github', '').strip()
+                linkedin = request.POST.get('linkedin', '').strip()
+                facebook = request.POST.get('facebook', '').strip()
+                
+                # Validation
+                if github and not self._is_valid_url(github):
+                    messages.error(request, 'Please enter a valid GitHub URL.')
+                elif linkedin and not self._is_valid_url(linkedin):
+                    messages.error(request, 'Please enter a valid LinkedIn URL.')
+                elif facebook and not self._is_valid_url(facebook):
+                    messages.error(request, 'Please enter a valid Facebook URL.')
+                else:
+                    # Update social links
+                    user.github = github
+                    user.linkedin = linkedin
+                    user.facebook = facebook
+                    user.save()
+                    
+                    messages.success(request, 'Social links updated successfully!')
+                    self._add_activity(request, "Updated social links")
+                    
+            except Exception as e:
+                messages.error(request, f'Error updating social links: {str(e)}')
             
-        # Password change
-        if 'current_password' in request.POST and 'new_password' in request.POST and 'confirm_password' in request.POST:
-            current_password = request.POST.get('current_password')
-            new_password = request.POST.get('new_password')
-            confirm_password = request.POST.get('confirm_password')
+            return redirect('profile')
+        
+        elif 'update_settings' in request.POST:
+            try:
+                # Get settings
+                email_notifications = request.POST.get('email_notifications') == 'on'
+                two_factor_enabled = request.POST.get('two_factor_enabled') == 'on'
+                public_profile = request.POST.get('public_profile') == 'on'
+                
+                # Update settings
+                user.email_notifications = email_notifications
+                user.two_factor_enabled = two_factor_enabled
+                user.public_profile = public_profile
+                user.save()
+                
+                messages.success(request, 'Settings updated successfully!')
+                self._add_activity(request, "Updated account settings")
+                
+            except Exception as e:
+                messages.error(request, f'Error updating settings: {str(e)}')
             
-            if not current_password:
-                msg = 'Current password is required.'
-            elif not user.check_password(current_password):
-                msg = 'Current password is incorrect.'
-            elif not new_password:
-                msg = 'New password is required.'
-            elif new_password != confirm_password:
-                msg = 'New passwords do not match.'
-            elif len(new_password) < 8:
-                msg = 'New password must be at least 8 characters long.'
-            elif len(new_password) > 128:
-                msg = 'New password must be less than 128 characters.'
-            elif new_password == current_password:
-                msg = 'New password must be different from current password.'
-            elif not self._is_strong_password(new_password):
-                msg = 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
-            else:
-                try:
+            return redirect('profile')
+            
+        elif 'change_password' in request.POST:
+            try:
+                current_password = request.POST.get('current_password', '').strip()
+                new_password = request.POST.get('new_password', '').strip()
+                confirm_password = request.POST.get('confirm_password', '').strip()
+                
+                # Validation
+                if not user.check_password(current_password):
+                    messages.error(request, 'Current password is incorrect.')
+                elif not new_password:
+                    messages.error(request, 'New password is required.')
+                elif len(new_password) < 8:
+                    messages.error(request, 'New password must be at least 8 characters long.')
+                elif new_password != confirm_password:
+                    messages.error(request, 'New passwords do not match.')
+                else:
+                    # Update password
                     user.set_password(new_password)
                     user.save()
                     update_session_auth_hash(request, user)
-                    msg = 'Password updated successfully!'
-                    self._add_activity(request, f"Changed password")
-                    request.session.pop('password_msg', None)
-                    request.session['password_msg'] = msg
-                except Exception as e:
-                    msg = f'Error changing password: {str(e)}'
-                    request.session['password_msg'] = msg
-            
-            if is_ajax:
-                return JsonResponse({'status': 'success' if 'successfully' in msg else 'error', 'message': msg})
-            return self.get(request)
-            
-        # Export user data
-        if 'export_data' in request.POST:
-            try:
-                # Enhanced user data export
-                user_data = {
-                    'user_info': {
-                        'email': user.email,
-                        'full_name': user.full_name,
-                        'phone_number': user.phone_number,
-                        'linkedin': user.linkedin,
-                        'github': user.github,
-                        'date_joined': user.date_joined.isoformat(),
-                        'last_login': user.last_login.isoformat() if user.last_login else None,
-                        'is_active': user.is_active,
-                        'is_staff': user.is_staff,
-                        'profile_completion': self._calculate_profile_completion(user)
-                    },
-                    'account_stats': {
-                        'days_since_joined': (timezone.now() - user.date_joined).days,
-                        'total_activities': len(request.session.get('recent_activities', [])),
-                        'export_date': timezone.now().isoformat()
-                    },
-                    'recent_activities': request.session.get('recent_activities', []),
-                    'export_metadata': {
-                        'exported_at': timezone.now().isoformat(),
-                        'export_version': '1.0',
-                        'data_format': 'JSON'
-                    }
-                }
-                
-                response = HttpResponse(
-                    json.dumps(user_data, indent=2, default=str),
-                    content_type='application/json'
-                )
-                response['Content-Disposition'] = f'attachment; filename="geosurvey_user_data_{user.email}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json"'
-                self._add_activity(request, f"Exported user data")
-                return response
-                
+                    
+                    messages.success(request, 'Password changed successfully!')
+                    self._add_activity(request, "Changed password")
+                    
             except Exception as e:
-                msg = f'Error exporting data: {str(e)}'
-                if is_ajax:
-                    return JsonResponse({'status': 'error', 'message': msg})
-                request.session['profile_msg'] = msg
-                return self.get(request)
+                messages.error(request, f'Error changing password: {str(e)}')
+            
+            return redirect('profile')
         
-        # Account deletion
-        if 'delete_account' in request.POST:
+        elif 'delete_account' in request.POST:
             try:
-                self._add_activity(request, f"Account deletion requested")
+                # Delete all associated data
+                FileUpload.objects.filter(user=user).delete()
+                KMLData.objects.filter(kml_file__user=user).delete()
+                KMLFile.objects.filter(user=user).delete()
+                UploadedParcel.objects.filter(user=user).delete()
+                DownloadLog.objects.filter(user=user).delete()
+                ContactFormSubmission.objects.filter(user=user).delete()
+                
+                # Delete user
                 user.delete()
                 logout(request)
-                return redirect('/api/account/login-page/')
-            except Exception as e:
-                msg = f'Error deleting account: {str(e)}'
-                if is_ajax:
-                    return JsonResponse({'status': 'error', 'message': msg})
-                request.session['profile_msg'] = msg
-                return self.get(request)
+                messages.success(request, 'Your account has been deleted successfully.')
+                return redirect('login')
                 
-        return self.get(request)
+            except Exception as e:
+                messages.error(request, f'Error deleting account: {str(e)}')
+                return redirect('profile')
 
-    def _add_activity(self, request, activity):
-        """Add activity to user's recent activities"""
-        activities = request.session.get('recent_activities', [])
-        timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
-        activities.append(f"{activity} - {timestamp}")
-        request.session['recent_activities'] = activities[-20:]  # Keep last 20 activities
-    
     def _is_valid_phone(self, phone):
         """Validate phone number format"""
-        # Remove all non-digit characters except +
-        cleaned = re.sub(r'[^\d+]', '', phone)
-        # Check if it's a valid phone number (7-15 digits, optionally starting with +)
-        return re.match(r'^\+?[\d\s\-\(\)]{7,15}$', phone) is not None
-    
+        import re
+        phone_pattern = r'^\+?1?\d{9,15}$'
+        return re.match(phone_pattern, phone) is not None
+
     def _is_valid_url(self, url):
         """Validate URL format"""
-        if not url:
-            return True
-        # Check if it's a valid URL
-        url_pattern = re.compile(
-            r'^https?://'  # http:// or https://
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
-            r'localhost|'  # localhost...
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-            r'(?::\d+)?'  # optional port
-            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-        return url_pattern.match(url) is not None
-    
+        import re
+        url_pattern = r'^https?://(?:[-\w.])+(?:[:\d]+)?(?:/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?$'
+        return re.match(url_pattern, url) is not None
+
     def _is_valid_image_extension(self, filename):
         """Validate image file extension"""
-        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
-        return any(filename.lower().endswith(ext) for ext in allowed_extensions)
-    
-    def _is_strong_password(self, password):
-        """Validate password strength"""
-        # Check for at least one uppercase, lowercase, number, and special character
-        has_upper = re.search(r'[A-Z]', password)
-        has_lower = re.search(r'[a-z]', password)
-        has_digit = re.search(r'\d', password)
-        has_special = re.search(r'[!@#$%^&*(),.?":{}|<>]', password)
+        import os
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+        file_extension = os.path.splitext(filename)[1].lower()
+        return file_extension in allowed_extensions
+
+    def _add_activity(self, request, activity_type):
+        """Add activity to user's recent activities"""
+        recent_activities = request.session.get('recent_activities', [])
+        activity = {
+            'type': activity_type,
+            'timestamp': timezone.now().isoformat(),
+        }
+        recent_activities.append(activity)
         
-        return has_upper and has_lower and has_digit and has_special
-    
-    def _calculate_profile_completion(self, user):
-        """Calculate profile completion percentage"""
-        completion_fields = [
-            bool(user.full_name),
-            bool(user.phone_number),
-            bool(user.linkedin),
-            bool(user.github),
-            bool(user.avatar and user.avatar.url != '/media/avatars/default.png')
-        ]
-        return int((sum(completion_fields) / len(completion_fields)) * 100)
+        # Keep only last 20 activities
+        if len(recent_activities) > 20:
+            recent_activities = recent_activities[-20:]
+        
+        request.session['recent_activities'] = recent_activities

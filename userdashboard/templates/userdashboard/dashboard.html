@@ -1,488 +1,433 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - GeoSurvey</title>
-    <link rel="stylesheet" href="/static/userdashboard/dashboard.css">
-    <style>
-        /* Fallback CSS - Inline styles to ensure responsiveness */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 15%, #f093fb 30%, #f5576c 45%, #4facfe 60%, #43e97b 75%, #38f9d7 90%, #667eea 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 20s ease infinite;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        /* Top Navbar */
-        .top-navbar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            animation: slideInDown 0.8s ease;
-        }
-        
-        @keyframes slideInDown {
-            from { opacity: 0; transform: translateY(-100%); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .navbar-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-        }
-        
-        /* Brand Logo */
-        .brand-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        
-        .brand-logo:hover {
-            transform: scale(1.05);
-        }
-        
-        .logo-icon {
-            font-size: 2rem;
-            animation: logoFloat 3s ease-in-out infinite;
-        }
-        
-        @keyframes logoFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-        }
-        
-        .brand-text {
-            font-size: 1.8rem;
-            font-weight: 900;
-            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe);
-            background-size: 300% 300%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientText 3s ease infinite;
-        }
-        
-        @keyframes gradientText {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        
-        /* Navigation Menu */
-        .navbar-menu {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 20px;
-            color: #232946;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .nav-link:hover {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-        
-        .nav-link.active {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .nav-icon {
-            font-size: 1.2rem;
-            transition: transform 0.3s ease;
-        }
-        
-        .nav-link:hover .nav-icon {
-            transform: scale(1.2) rotate(5deg);
-        }
-        
-        /* Profile Section */
-        .profile-dropdown {
-            position: relative;
-        }
-        
-        .profile-trigger {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-        
-        .profile-trigger:hover {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(102, 126, 234, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .profile-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            transition: transform 0.3s ease;
-        }
-        
-        .profile-trigger:hover .profile-avatar {
-            transform: scale(1.1);
-        }
-        
-        .profile-name {
-            font-weight: 600;
-            color: #232946;
-            max-width: 150px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 8px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            min-width: 200px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px) scale(0.95);
-            transition: all 0.3s ease;
-        }
-        
-        .dropdown-menu.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0) scale(1);
-        }
-        
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            color: #232946;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
-        }
-        
-        .dropdown-item:hover {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: #fff;
-        }
-        
-        .dropdown-item:first-child {
-            border-radius: 16px 16px 0 0;
-        }
-        
-        .dropdown-item:last-child {
-            border-radius: 0 0 16px 16px;
-        }
-        
-        /* Mobile Toggle */
-        .navbar-toggle {
-            display: none;
-            flex-direction: column;
-            gap: 4px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        
-        .navbar-toggle span {
-            width: 25px;
-            height: 3px;
-            background: #232946;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-        
-        .navbar-toggle.active span:nth-child(1) {
-            transform: rotate(45deg) translate(6px, 6px);
-        }
-        
-        .navbar-toggle.active span:nth-child(2) {
-            opacity: 0;
-        }
-        
-        .navbar-toggle.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(6px, -6px);
-        }
-        
-        /* Main Content */
-        .main-wrapper {
-            margin-top: 70px;
-            padding: 40px 20px;
-            min-height: calc(100vh - 70px);
-        }
-        
-        .dashboard-overview {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            animation: slideInUp 1s ease;
-        }
-        
-        @keyframes slideInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .nav-text {
-                display: none;
-            }
-            
-            .nav-link {
-                padding: 12px 16px;
-            }
-            
-            .profile-name {
-                max-width: 100px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .navbar-menu {
-                position: fixed;
-                top: 70px;
-                left: -100%;
-                width: 100%;
-                height: calc(100vh - 70px);
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(20px);
-                flex-direction: column;
-                padding: 40px 20px;
-                transition: left 0.3s ease;
-                gap: 20px;
-            }
-            
-            .navbar-menu.active {
-                left: 0;
-            }
-            
-            .nav-link {
-                width: 100%;
-                justify-content: center;
-                padding: 16px 24px;
-                font-size: 1.1rem;
-            }
-            
-            .nav-text {
-                display: block;
-            }
-            
-            .navbar-toggle {
-                display: flex;
-            }
-            
-            .profile-name {
-                display: none;
-            }
-            
-            .dropdown-arrow {
-                display: none;
-            }
-            
-            .main-wrapper {
-                padding: 20px 15px;
-            }
-            
-            .dashboard-overview {
-                padding: 30px 20px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .navbar-container {
-                padding: 0 15px;
-            }
-            
-            .brand-text {
-                font-size: 1.5rem;
-            }
-            
-            .logo-icon {
-                font-size: 1.5rem;
-            }
-            
-            .main-wrapper {
-                padding: 15px 10px;
-            }
-            
-            .dashboard-overview {
-                padding: 20px 15px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Top Navbar -->
-    <nav class="top-navbar">
-        <div class="navbar-container">
-            <div class="navbar-brand">
-                <div class="brand-logo">
-                    <span class="logo-icon">🗺️</span>
-                    <h1 class="brand-text">GeoSurvey</h1>
-                </div>
-            </div>
-            
-            <div class="navbar-menu">
-                <a href="{% url 'user_dashboard' %}" class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}">
-                    <span class="nav-icon">🏠</span>
-                    <span class="nav-text">Dashboard</span>
-                </a>
-                <a href="{% url 'uploads' %}" class="nav-link {% if request.path == '/dashboard/uploads/' %}active{% endif %}">
-                    <span class="nav-icon">📤</span>
-                    <span class="nav-text">Uploads</span>
-                </a>
-                <a href="{% url 'my_survey' %}" class="nav-link {% if request.path == '/dashboard/my-survey/' %}active{% endif %}">
-                    <span class="nav-icon">📋</span>
-                    <span class="nav-text">My Survey</span>
-                </a>
+{% extends 'userdashboard/base.html' %}
+{% load static %}
 
-                <a href="{% url 'geospatial_dashboard' %}" class="nav-link {% if request.path == '/dashboard/geospatial-dashboard/' %}active{% endif %}">
-                    <span class="nav-icon">🌍</span>
-                    <span class="nav-text">Geospatial Dashboard</span>
-                </a>
-                <a href="{% url 'history' %}" class="nav-link {% if request.path == '/dashboard/history/' %}active{% endif %}">
-                    <span class="nav-icon">🕑</span>
-                    <span class="nav-text">History</span>
-                </a>
-                <a href="{% url 'help' %}" class="nav-link {% if request.path == '/dashboard/help/' %}active{% endif %}">
-                    <span class="nav-icon">❓</span>
-                    <span class="nav-text">Help</span>
-                </a>
-            </div>
-            
-            <div class="navbar-profile">
-                <div class="profile-dropdown">
-                    <div class="profile-trigger">
-                        <img src="{% if user.avatar and user.avatar.url %}{{ user.avatar.url }}{% else %}/static/userdashboard/user.png{% endif %}" alt="Profile" class="profile-avatar">
-                        <span class="profile-name">{{ user.full_name|default:user.email }}</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </div>
-                    <div class="dropdown-menu">
-                        <a href="{% url 'profile' %}" class="dropdown-item">
-                            <span class="dropdown-icon">👤</span>
-                            Profile Settings
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item logout-btn" onclick="logoutUser()">
-                            <span class="dropdown-icon">🚪</span>
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="navbar-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    </nav>
+{% block title %}Dashboard - GeoSurvey{% endblock %}
 
-    <!-- Main Content -->
-    <div class="main-wrapper">
-        {% block content %}
-        <section class="dashboard-overview">
-            <p>Select a section from the navbar to get started.</p>
-        </section>
-        {% endblock %}
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h1 class="welcome-title">Welcome back, {{ user.full_name|default:user.email }}!</h1>
+        <p class="welcome-subtitle">Manage your data and surveys with ease</p>
     </div>
 
-    <script>
-    function logoutUser() {
-        localStorage.removeItem('access');
-        localStorage.removeItem('refresh');
-        window.location.href = '/api/account/login-page/';
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📁</div>
+            <div class="stat-content">
+                <h3>{{ total_files|default:"0" }}</h3>
+                <p>Total Files</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🗺️</div>
+            <div class="stat-content">
+                <h3>{{ total_surveys|default:"0" }}</h3>
+                <p>Surveys Created</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📤</div>
+            <div class="stat-content">
+                <h3>{{ recent_uploads|default:"0" }}</h3>
+                <p>Recent Uploads</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📍</div>
+            <div class="stat-content">
+                <h3>{{ total_parcels|default:"0" }}</h3>
+                <p>Land Parcels</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Upload Files Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon">📤</div>
+                <h3 class="card-title">Upload Files</h3>
+            </div>
+            <div class="card-content">
+                Upload KML, CSV, and other files to analyze and visualize your data.
+            </div>
+            <div class="card-actions">
+                <a href="{% url 'uploads' %}" class="btn btn-primary">Upload Files</a>
+                <a href="{% url 'file_list' %}" class="btn btn-secondary">View All</a>
+            </div>
+        </div>
+
+        <!-- My Survey Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon">📋</div>
+                <h3 class="card-title">My Survey</h3>
+            </div>
+            <div class="card-content">
+                View and manage your submitted surveys and their current status.
+            </div>
+            <div class="card-actions">
+                <a href="{% url 'my_survey' %}" class="btn btn-primary">View Surveys</a>
+                <a href="{% url 'kml_upload' %}" class="btn btn-secondary">New Survey</a>
+            </div>
+        </div>
+
+        <!-- Recent Activities Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon">🕑</div>
+                <h3 class="card-title">Recent Activities</h3>
+            </div>
+            <div class="card-content">
+                <div class="activity-list">
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                {% if activity.type == 'upload' %}📁{% elif activity.type == 'survey' %}🗺️{% else %}📝{% endif %}
+                            </div>
+                            <div class="activity-details">
+                                <p class="activity-text">{{ activity.description }}</p>
+                                <span class="activity-time">{{ activity.timestamp|date:"M d, H:i" }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-activities">No recent activities</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-actions">
+                <a href="{% url 'history' %}" class="btn btn-primary">View All</a>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon">⚡</div>
+                <h3 class="card-title">Quick Actions</h3>
+            </div>
+            <div class="card-content">
+                <div class="quick-actions">
+                    <a href="{% url 'kml_upload' %}" class="quick-action">
+                        <span class="quick-icon">📍</span>
+                        <span>Upload KML</span>
+                    </a>
+                    <a href="{% url 'file_upload' %}" class="quick-action">
+                        <span class="quick-icon">📄</span>
+                        <span>Upload CSV</span>
+                    </a>
+                    <a href="{% url 'help' %}" class="quick-action">
+                        <span class="quick-icon">❓</span>
+                        <span>Get Help</span>
+                    </a>
+                    <a href="{% url 'profile' %}" class="quick-action">
+                        <span class="quick-icon">👤</span>
+                        <span>Profile</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Welcome Section */
+.welcome-section {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-radius: 16px;
+    color: white;
+}
+
+.welcome-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.welcome-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-right: 20px;
+}
+
+.stat-content h3 {
+    font-size: 2.5rem;
+    color: #2563eb;
+    margin: 0 0 5px 0;
+    font-weight: 700;
+}
+
+.stat-content p {
+    color: #6b7280;
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.card-icon {
+    font-size: 2rem;
+    margin-right: 15px;
+}
+
+.card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.card-content {
+    margin-bottom: 25px;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+/* Activity List */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 4px solid #2563eb;
+}
+
+.activity-icon {
+    font-size: 1.2rem;
+    margin-right: 12px;
+}
+
+.activity-details {
+    flex: 1;
+}
+
+.activity-text {
+    margin: 0 0 5px 0;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.activity-time {
+    color: #9ca3af;
+    font-size: 0.8rem;
+}
+
+.no-activities {
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+    margin: 20px 0;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #374151;
+    transition: all 0.2s;
+    border: 1px solid #e5e7eb;
+}
+
+.quick-action:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+}
+
+.quick-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.quick-action span:last-child {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Buttons */
+.card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 15px;
     }
 
-    // Mobile menu toggle
-    document.querySelector('.navbar-toggle').addEventListener('click', function() {
-        document.querySelector('.navbar-menu').classList.toggle('active');
-        this.classList.toggle('active');
-    });
+    .welcome-title {
+        font-size: 2rem;
+    }
 
-    // Profile dropdown toggle
-    document.querySelector('.profile-trigger').addEventListener('click', function() {
-        document.querySelector('.dropdown-menu').classList.toggle('show');
-    });
+    .welcome-subtitle {
+        font-size: 1rem;
+    }
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.profile-dropdown')) {
-            document.querySelector('.dropdown-menu').classList.remove('show');
-        }
-    });
-    </script>
-</body>
-</html> 
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        margin-right: 15px;
+    }
+
+    .stat-content h3 {
+        font-size: 2rem;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .card-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-section {
+        padding: 30px 15px;
+    }
+
+    .welcome-title {
+        font-size: 1.8rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-card {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %} 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - GeoSurvey</title>
+    <title>{% block title %}User Dashboard - GeoSurvey{% endblock %}</title>
     <link rel="stylesheet" href="/static/userdashboard/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     {% block extra_css %}{% endblock %}
@@ -259,11 +259,6 @@
                 <a href="{% url 'my_survey' %}" class="nav-link {% if request.path == '/dashboard/my-survey/' %}active{% endif %}">
                     <span class="nav-icon">📋</span>
                     <span class="nav-text">My Survey</span>
-                </a>
-
-                <a href="{% url 'geospatial_dashboard' %}" class="nav-link {% if request.path == '/dashboard/geospatial-dashboard/' %}active{% endif %}">
-                    <span class="nav-icon">🌍</span>
-                    <span class="nav-text">Geospatial Dashboard</span>
                 </a>
                 <a href="{% url 'history' %}" class="nav-link {% if request.path == '/dashboard/history/' %}active{% endif %}">
                     <span class="nav-icon">🕑</span>
