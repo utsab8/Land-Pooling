@@ -11,6 +11,14 @@ from django.conf import settings
 # Render login page
 from django.views import View
 
+class DebugView(View):
+    def get(self, request):
+        return render(request, 'account/login_debug.html')
+
+class InlineView(View):
+    def get(self, request):
+        return render(request, 'account/login_inline.html')
+
 class LoginPageView(View):
     def get(self, request):
         # If user is already authenticated, redirect to appropriate dashboard

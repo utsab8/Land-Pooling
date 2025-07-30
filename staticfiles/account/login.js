@@ -1,18 +1,24 @@
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const errorDiv = document.getElementById('loginError');
-    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const submitBtn = loginForm.querySelector('.submit-btn');
     
-    // Add loading spinner to button
-    const originalBtnText = submitBtn.textContent;
+    // Initialize floating labels
+    initializeFloatingLabels();
+    
+    // Initialize password toggles
+    initializePasswordToggles();
+    
+    // Initialize social login buttons
+    initializeSocialLogin();
     
     function showLoading() {
-        submitBtn.innerHTML = '<div class="spinner"></div> Logging in...';
+        submitBtn.classList.add('loading');
         submitBtn.disabled = true;
     }
     
     function hideLoading() {
-        submitBtn.textContent = originalBtnText;
+        submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
     }
     
@@ -33,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
-        const next = document.getElementById('nextInput') ? document.getElementById('nextInput').value : '';
+        const remember = document.getElementById('remember') ? document.getElementById('remember').checked : false;
         
         hideError();
 
@@ -43,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (!email.includes('@')) {
+        if (!isValidEmail(email)) {
             showError('Please enter a valid email address.');
             return;
         }
@@ -57,18 +63,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: JSON.stringify({ email, password, next })
+                body: JSON.stringify({ 
+                    email, 
+                    password, 
+                    remember_me: remember 
+                })
             });
             
             const data = await response.json();
             
             if (response.ok) {
                 // Store JWT tokens
-                localStorage.setItem('access', data.access);
-                localStorage.setItem('refresh', data.refresh);
+                if (data.access) {
+                    localStorage.setItem('access', data.access);
+                }
+                if (data.refresh) {
+                    localStorage.setItem('refresh', data.refresh);
+                }
                 
                 // Success animation
-                submitBtn.innerHTML = '✓ Success!';
+                submitBtn.innerHTML = '<span class="btn-text">✓ Success!</span>';
                 submitBtn.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
                 
                 // Redirect after a brief delay
@@ -92,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Input focus effects
+    // Input focus effects and validation
     const inputs = loginForm.querySelectorAll('input');
     inputs.forEach(input => {
         input.addEventListener('focus', function() {
@@ -107,7 +121,85 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Auto-hide error when user starts typing
         input.addEventListener('input', hideError);
+        
+        // Real-time validation
+        if (input.type === 'email') {
+            input.addEventListener('blur', function() {
+                if (this.value && !isValidEmail(this.value)) {
+                    this.style.borderColor = '#e74c3c';
+                } else {
+                    this.style.borderColor = '';
+                }
+            });
+        }
     });
+    
+    // Initialize floating labels
+    function initializeFloatingLabels() {
+        const inputs = document.querySelectorAll('.input-wrapper input');
+        inputs.forEach(input => {
+            if (input.value) {
+                input.classList.add('has-value');
+            }
+            
+            input.addEventListener('input', function() {
+                if (this.value) {
+                    this.classList.add('has-value');
+                } else {
+                    this.classList.remove('has-value');
+                }
+            });
+        });
+    }
+    
+    // Initialize password toggles
+    function initializePasswordToggles() {
+        const passwordToggles = document.querySelectorAll('.password-toggle');
+        passwordToggles.forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const input = this.parentElement.querySelector('input');
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    }
+    
+    // Initialize social login buttons
+    function initializeSocialLogin() {
+        const socialButtons = document.querySelectorAll('.social-btn');
+        socialButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const provider = this.classList.contains('google-btn') ? 'google' : 'github';
+                
+                // Show loading state
+                this.innerHTML = '<div class="spinner"></div> Connecting...';
+                this.disabled = true;
+                
+                // Simulate social login (replace with actual implementation)
+                setTimeout(() => {
+                    showError(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login is not yet implemented.`);
+                    this.innerHTML = `<i class="fab fa-${provider}"></i><span>${provider.charAt(0).toUpperCase() + provider.slice(1)}</span>`;
+                    this.disabled = false;
+                }, 2000);
+            });
+        });
+    }
+    
+    // Email validation
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
     
     // Get CSRF token from cookies
     function getCookie(name) {
@@ -126,7 +218,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Add shake animation
+// Global function for password toggle (for onclick attribute)
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const toggle = input.parentElement.querySelector('.password-toggle i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        toggle.classList.remove('fa-eye');
+        toggle.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        toggle.classList.remove('fa-eye-slash');
+        toggle.classList.add('fa-eye');
+    }
+}
+
+// Add shake animation and enhanced styles
 const style = document.createElement('style');
 style.textContent = `
     @keyframes shake {
@@ -135,14 +243,25 @@ style.textContent = `
         75% { transform: translateX(5px); }
     }
     
-    .input-group.focused label {
+    .input-wrapper.focused .input-icon {
         color: #667eea;
-        transform: translateY(-2px);
     }
     
-    .input-group.focused input {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    .input-wrapper input.has-value + .floating-label {
+        transform: translateY(-24px) scale(0.85);
+        color: #667eea;
+    }
+    
+    .social-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .social-btn .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(0, 0, 0, 0.3);
+        border-top: 2px solid #333;
     }
 `;
 document.head.appendChild(style); 

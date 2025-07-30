@@ -505,3 +505,63 @@ class UploadedParcel(models.Model):
                 }
             }
         return None
+
+class SurveyHistoryLog(models.Model):
+    ACTION_CHOICES = [
+        ('upload', 'File Upload'),
+        ('filter', 'Filter Applied'),
+        ('export', 'PDF Export'),
+        ('download', 'File Download'),
+        ('delete', 'File Deleted'),
+    ]
+    
+    action_type = models.CharField(choices=ACTION_CHOICES, max_length=10)
+    file_name = models.CharField(max_length=255, null=True, blank=True)
+    file_type = models.CharField(max_length=10, null=True, blank=True)
+    filters_applied = models.JSONField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    record_count = models.IntegerField(default=0)
+    map_coordinates_count = models.IntegerField(default=0)
+    export_file_path = models.CharField(max_length=500, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Survey History Log'
+        verbose_name_plural = 'Survey History Logs'
+    
+    def __str__(self):
+        return f"{self.get_action_type_display()} - {self.file_name or 'N/A'} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+    
+    def get_filter_summary(self):
+        """Get a human-readable summary of applied filters"""
+        if not self.filters_applied:
+            return "No filters applied"
+        
+        summary_parts = []
+        filters = self.filters_applied
+        
+        if filters.get('kitta_filter'):
+            summary_parts.append(f"Kitta: {filters['kitta_filter']}")
+        if filters.get('owner_filter'):
+            summary_parts.append(f"Owner: {filters['owner_filter']}")
+        if filters.get('location_filter'):
+            summary_parts.append(f"Location: {filters['location_filter']}")
+        if filters.get('area_min') or filters.get('area_max'):
+            area_range = []
+            if filters.get('area_min'):
+                area_range.append(f"≥{filters['area_min']} ha")
+            if filters.get('area_max'):
+                area_range.append(f"≤{filters['area_max']} ha")
+            summary_parts.append(f"Area: {' - '.join(area_range)}")
+        if filters.get('geometry_filter'):
+            summary_parts.append(f"Type: {filters['geometry_filter']}")
+        
+        return " | ".join(summary_parts) if summary_parts else "No specific filters"
+    
+    def get_short_description(self):
+        """Get a short description for display"""
+        if self.description:
+            return self.description[:100] + "..." if len(self.description) > 100 else self.description
+        return self.get_filter_summary()

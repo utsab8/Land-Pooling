@@ -1,6 +1,8 @@
 from django.urls import path
 from .views import (
-    UserDashboardView, UploadsView, MySurveyView, HistoryView, HelpView, ProfileView
+    UserDashboardView, UploadsView, MySurveyView, HistoryView, HelpView, ProfileView,
+    SurveyReportView, SurveyReportAPIView, SurveyExportView,
+    test_css_view, css_test_view, create_sample_history_data
 )
 from .kml_views import (
     KMLUploadView, KMLPreviewView, KMLAjaxView, KMLListView, KMLDeleteView, KMLGeoJSONView
@@ -42,10 +44,18 @@ urlpatterns = [
     path('shared/<uuid:share_token>/', SharedFileView.as_view(), name='shared_file'),
 
     path('my-survey/', MySurveyView.as_view(), name='my_survey'),
-
+    path('survey-report/', SurveyReportView.as_view(), name='survey_report'),
+    path('survey-report/api/', SurveyReportAPIView.as_view(), name='survey_report_api'),
+    path('survey-report/data/', SurveyReportAPIView.as_view(), name='survey_report_data'),
+    path('survey-report/reprocess/', SurveyReportAPIView.as_view(), name='survey_report_reprocess'),
+    path('survey-report/export/', SurveyExportView.as_view(), name='survey_export'),
     path('history/', HistoryView.as_view(), name='history'),
+    path('history/create-sample-data/', create_sample_history_data, name='create_sample_data'),
+    path('history/test/', create_sample_history_data, name='test_history'),
     path('help/', HelpView.as_view(), name='help'),
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('test-css/', test_css_view, name='test_css'),
+    path('css-test/', css_test_view, name='css_test'),
 ]
 
 urlpatterns += [

@@ -1,18 +1,18 @@
 from django.contrib import admin
 from .models import (
-    FileUpload, FileConversion, CSVData, ShapefileData, KMLData, 
-    FileShare, FileProcessingLog, ContactFormSubmission, UploadedParcel
+    FileUpload, KMLFile, KMLData, FileShare, FileProcessingLog,
+    DownloadLog, ContactFormSubmission, SurveyHistoryLog
 )
 
 # Register your models here.
 
 @admin.register(ContactFormSubmission)
 class ContactFormSubmissionAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'subject', 'submitted_at', 'is_resolved', 'user']
-    list_filter = ['subject', 'is_resolved', 'submitted_at']
-    search_fields = ['name', 'email', 'message']
-    readonly_fields = ['submitted_at']
-    list_editable = ['is_resolved']
+    list_display = ['name', 'email', 'subject', 'submitted_at', 'user']
+    list_filter = ['submitted_at', 'user']
+    search_fields = ['name', 'email', 'subject', 'message']
+    readonly_fields = ['submitted_at', 'user']
+    ordering = ['-submitted_at']
     
     fieldsets = (
         ('Contact Information', {
@@ -30,26 +30,26 @@ class ContactFormSubmissionAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user')
 
-@admin.register(UploadedParcel)
-class UploadedParcelAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'kitta_no', 'district', 'municipality', 'file_type', 'uploaded_at', 'user']
-    list_filter = ['file_type', 'district', 'municipality', 'uploaded_at']
-    search_fields = ['name', 'kitta_no', 'district', 'municipality', 'ward']
-    readonly_fields = ['id', 'uploaded_at']
-    date_hierarchy = 'uploaded_at'
+@admin.register(SurveyHistoryLog)
+class SurveyHistoryLogAdmin(admin.ModelAdmin):
+    list_display = ['action_type', 'file_name', 'record_count', 'user', 'created_at']
+    list_filter = ['action_type', 'file_type', 'created_at', 'user']
+    search_fields = ['file_name', 'description', 'user__username']
+    readonly_fields = ['created_at', 'user']
+    ordering = ['-created_at']
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('id', 'user', 'name', 'kitta_no', 'sn_no')
-        }),
-        ('Location', {
-            'fields': ('district', 'municipality', 'ward', 'location')
+            'fields': ('action_type', 'user', 'created_at')
         }),
         ('File Information', {
-            'fields': ('file_type', 'original_file', 'uploaded_at')
+            'fields': ('file_name', 'file_type', 'record_count', 'map_coordinates_count')
         }),
-        ('Geometry', {
-            'fields': ('geometry', 'coordinates'),
+        ('Filter & Export Details', {
+            'fields': ('filters_applied', 'description', 'export_file_path'),
             'classes': ('collapse',)
         }),
     )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user')

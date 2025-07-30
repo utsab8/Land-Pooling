@@ -1,65 +1,66 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}User Dashboard - GeoSurvey{% endblock %}</title>
-    <link rel="stylesheet" href="/static/userdashboard/dashboard.css">
+    <link rel="stylesheet" href="{% static 'userdashboard/dashboard.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% block extra_css %}{% endblock %}
     <style>
-        /* Fallback CSS - Inline styles to ensure responsiveness */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Essential fallback styles */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 15%, #f093fb 30%, #f5576c 45%, #4facfe 60%, #43e97b 75%, #38f9d7 90%, #667eea 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 20s ease infinite;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        
+        /* Critical navbar fixes */
+        .navbar-container {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 2rem !important;
         }
-
-        /* Enhanced Logout Button Styles */
-        .logout-btn {
-            background: none;
-            border: none;
-            width: 100%;
-            text-align: left;
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #333;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-radius: 8px;
+        
+        .navbar-menu {
+            flex: 0 1 auto !important;
+            justify-content: center !important;
         }
-
-        .logout-btn:hover {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-            color: white;
-            transform: translateX(5px);
+        
+        .navbar-profile {
+            margin-left: 0 !important;
+            flex-shrink: 0 !important;
         }
-
-        .logout-btn:active {
-            transform: translateX(5px) scale(0.98);
+        
+        /* Profile avatar fixes */
+        .profile-avatar {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
         }
-
-        .logout-btn .dropdown-icon {
-            font-size: 16px;
-            transition: transform 0.3s ease;
+        
+        .profile-avatar img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
         }
-
+        
+        /* Dropdown positioning */
+        .dropdown-menu {
+            right: 0 !important;
+            left: auto !important;
+        }
+    </style>
+    <style>
+        /* Additional styles for logout button */
         .logout-btn:hover .dropdown-icon {
             transform: rotate(90deg);
         }
@@ -235,6 +236,56 @@
                 max-width: none;
             }
         }
+
+        /* Enhanced Dropdown Animations */
+        .dropdown-item {
+            --item-index: 0;
+        }
+
+        .dropdown-item:nth-child(1) { --item-index: 0; }
+        .dropdown-item:nth-child(2) { --item-index: 1; }
+        .dropdown-item:nth-child(3) { --item-index: 2; }
+        .dropdown-item:nth-child(4) { --item-index: 3; }
+        .dropdown-item:nth-child(5) { --item-index: 4; }
+
+        /* Profile Status Indicator */
+        .profile-status {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            background: #28a745;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .profile-status.offline {
+            background: #dc3545;
+        }
+
+        .profile-status.away {
+            background: #ffc107;
+        }
+
+        /* Enhanced Navigation Indicators */
+        .nav-link .nav-indicator {
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 20px;
+            height: 3px;
+            background: linear-gradient(90deg, #ffffff, #f0f0f0);
+            border-radius: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover .nav-indicator,
+        .nav-link.active .nav-indicator {
+            transform: translateX(-50%) scaleX(1);
+        }
     </style>
 </head>
 <body>
@@ -242,41 +293,54 @@
     <nav class="top-navbar">
         <div class="navbar-container">
             <div class="navbar-brand">
-                <div class="brand-logo">
+                <a href="{% url 'user_dashboard' %}" class="brand-logo">
                     <span class="logo-icon">🗺️</span>
                     <h1 class="brand-text">GeoSurvey</h1>
-                </div>
+                </a>
             </div>
             <div class="navbar-menu">
                 <a href="{% url 'user_dashboard' %}" class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}">
                     <span class="nav-icon">🏠</span>
                     <span class="nav-text">Dashboard</span>
+                    <span class="nav-indicator"></span>
                 </a>
                 <a href="{% url 'uploads' %}" class="nav-link {% if request.path == '/dashboard/uploads/' %}active{% endif %}">
                     <span class="nav-icon">📤</span>
                     <span class="nav-text">Uploads</span>
+                    <span class="nav-indicator"></span>
                 </a>
                 <a href="{% url 'my_survey' %}" class="nav-link {% if request.path == '/dashboard/my-survey/' %}active{% endif %}">
                     <span class="nav-icon">📋</span>
                     <span class="nav-text">My Survey</span>
+                    <span class="nav-indicator"></span>
+                </a>
+                <a href="{% url 'survey_report' %}" class="nav-link {% if request.path == '/dashboard/survey-report/' %}active{% endif %}">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Survey Report</span>
+                    <span class="nav-indicator"></span>
                 </a>
                 <a href="{% url 'history' %}" class="nav-link {% if request.path == '/dashboard/history/' %}active{% endif %}">
                     <span class="nav-icon">🕑</span>
                     <span class="nav-text">History</span>
+                    <span class="nav-indicator"></span>
                 </a>
                 <a href="{% url 'help' %}" class="nav-link {% if request.path == '/dashboard/help/' %}active{% endif %}">
                     <span class="nav-icon">❓</span>
                     <span class="nav-text">Help</span>
+                    <span class="nav-indicator"></span>
                 </a>
             </div>
             <div class="navbar-profile">
                 <div class="profile-dropdown">
-                    <div class="profile-trigger">
-                        <img src="{% if user.avatar and user.avatar.url %}{{ user.avatar.url }}{% else %}/static/userdashboard/user.png{% endif %}" alt="Profile" class="profile-avatar">
-                        <span class="profile-name">{{ user.full_name|default:user.email }}</span>
+                    <div class="profile-trigger" id="profileTrigger">
+                        <div class="profile-avatar">
+                            <img src="{% if user.avatar and user.avatar.url %}{{ user.avatar.url }}{% else %}data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iMjAiIGZpbGw9IiM2QjcyOEIiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNSIgcj0iNiIgZmlsbD0iI0Q5RDlEOSIvPgo8cGF0aCBkPSJNNyAzNUMyNyAzNSAyNyAzNSAyNyAzNUgyN0MyNyAzNSAyNyAzNSAyNyAzNUg3WiIgZmlsbD0iI0Q5RDlEOSIvPgo8L3N2Zz4K{% endif %}" alt="Profile" class="profile-avatar-img">
+                            <div class="profile-status" id="profileStatus"></div>
+                        </div>
+                        <span class="profile-name" id="profileName">{{ user.full_name|default:user.email }}</span>
                         <span class="dropdown-arrow">▼</span>
                     </div>
-                    <div class="dropdown-menu">
+                    <div class="dropdown-menu" id="profileDropdown">
                         <a href="{% url 'profile' %}" class="dropdown-item">
                             <span class="dropdown-icon">👤</span>
                             Profile Settings
@@ -289,7 +353,7 @@
                     </div>
                 </div>
             </div>
-            <div class="navbar-toggle">
+            <div class="navbar-toggle" id="navbarToggle">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -328,11 +392,146 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
+        // Enhanced Navbar Functionality
+        class NavbarManager {
+            constructor() {
+                this.profileTrigger = document.getElementById('profileTrigger');
+                this.profileDropdown = document.getElementById('profileDropdown');
+                this.navbarToggle = document.getElementById('navbarToggle');
+                this.navbarMenu = document.querySelector('.navbar-menu');
+                this.profileStatus = document.getElementById('profileStatus');
+                this.profileName = document.getElementById('profileName');
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.setupProfileStatus();
+                this.setupKeyboardShortcuts();
+                this.setupAnimations();
+            }
+
+            setupEventListeners() {
+                // Profile dropdown toggle
+                this.profileTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleProfileDropdown();
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.profile-dropdown')) {
+                        this.hideProfileDropdown();
+                    }
+                });
+
+                // Mobile menu toggle
+                this.navbarToggle.addEventListener('click', () => {
+                    this.toggleMobileMenu();
+                });
+
+                // Close mobile menu when clicking on a link
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        this.hideMobileMenu();
+                    });
+                });
+
+                // Enhanced hover effects for dropdown
+                this.profileTrigger.addEventListener('mouseenter', () => {
+                    if (window.innerWidth > 768) {
+                        this.showProfileDropdown();
+                    }
+                });
+
+                this.profileDropdown.addEventListener('mouseleave', () => {
+                    if (window.innerWidth > 768) {
+                        this.hideProfileDropdown();
+                    }
+                });
+            }
+
+            setupProfileStatus() {
+                // Simulate online status (in real app, this would come from backend)
+                this.profileStatus.classList.add('online');
+                
+                // Add status indicator animation
+                setInterval(() => {
+                    this.profileStatus.style.animation = 'pulse 2s infinite';
+                }, 5000);
+            }
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl/Cmd + L for logout
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+                        e.preventDefault();
+                        showLogoutConfirmation();
+                    }
+                    
+                    // Escape to close dropdowns
+                    if (e.key === 'Escape') {
+                        this.hideProfileDropdown();
+                        this.hideMobileMenu();
+                        hideLogoutConfirmation();
+                    }
+                });
+            }
+
+            setupAnimations() {
+                // Add staggered animation to dropdown items
+                const dropdownItems = this.profileDropdown.querySelectorAll('.dropdown-item');
+                dropdownItems.forEach((item, index) => {
+                    item.style.setProperty('--item-index', index);
+                });
+
+                // Add hover animations to nav links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('mouseenter', () => {
+                        link.style.transform = 'translateY(-2px)';
+                    });
+                    
+                    link.addEventListener('mouseleave', () => {
+                        link.style.transform = 'translateY(0)';
+                    });
+                });
+            }
+
+            toggleProfileDropdown() {
+                if (this.profileDropdown.classList.contains('show')) {
+                    this.hideProfileDropdown();
+                } else {
+                    this.showProfileDropdown();
+                }
+            }
+
+            showProfileDropdown() {
+                this.profileDropdown.classList.add('show');
+                this.profileTrigger.querySelector('.dropdown-arrow').style.transform = 'rotate(180deg)';
+            }
+
+            hideProfileDropdown() {
+                this.profileDropdown.classList.remove('show');
+                this.profileTrigger.querySelector('.dropdown-arrow').style.transform = 'rotate(0deg)';
+            }
+
+            toggleMobileMenu() {
+                this.navbarMenu.classList.toggle('active');
+                this.navbarToggle.classList.toggle('active');
+            }
+
+            hideMobileMenu() {
+                this.navbarMenu.classList.remove('active');
+                this.navbarToggle.classList.remove('active');
+            }
+        }
+
         // Enhanced Logout Functionality
         function showLogoutConfirmation() {
             document.getElementById('logoutModal').classList.add('show');
             // Close dropdown
-            document.querySelector('.dropdown-menu').classList.remove('show');
+            navbarManager.hideProfileDropdown();
         }
 
         function hideLogoutConfirmation() {
@@ -409,39 +608,34 @@
             }
         });
 
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                hideLogoutConfirmation();
+        // Initialize navbar manager
+        let navbarManager;
+        document.addEventListener('DOMContentLoaded', function() {
+            navbarManager = new NavbarManager();
+            
+            // Show welcome toast for first-time visitors
+            if (!localStorage.getItem('welcomeShown')) {
+                setTimeout(() => {
+                    showToast('Welcome to GeoSurvey! 🗺️', 'success');
+                    localStorage.setItem('welcomeShown', 'true');
+                }, 1000);
             }
         });
 
-        // Mobile menu toggle
-        document.querySelector('.navbar-toggle').addEventListener('click', function() {
-            document.querySelector('.navbar-menu').classList.toggle('active');
-            this.classList.toggle('active');
-        });
-
-        // Profile dropdown toggle
-        document.querySelector('.profile-trigger').addEventListener('click', function() {
-            document.querySelector('.dropdown-menu').classList.toggle('show');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.profile-dropdown')) {
-                document.querySelector('.dropdown-menu').classList.remove('show');
+        // Add CSS for pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
             }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl/Cmd + L for logout
-            if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
-                e.preventDefault();
-                showLogoutConfirmation();
+            
+            .profile-status.online {
+                background: #28a745;
+                animation: pulse 2s infinite;
             }
-        });
+        `;
+        document.head.appendChild(style);
     </script>
     {% block extra_js %}{% endblock %}
 </body>

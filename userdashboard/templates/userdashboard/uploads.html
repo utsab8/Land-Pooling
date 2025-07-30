@@ -346,47 +346,5 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add staggered animation to upload options
-    const options = document.querySelectorAll('.upload-option');
-    options.forEach((option, index) => {
-        option.style.opacity = '0';
-        option.style.transform = 'translateY(30px)';
-        setTimeout(() => {
-            option.style.transition = 'all 0.6s ease';
-            option.style.opacity = '1';
-            option.style.transform = 'translateY(0)';
-        }, index * 200);
-    });
-
-    // Add hover effects for stat items
-    const statItems = document.querySelectorAll('.stat-item');
-    statItems.forEach(item => {
-        item.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.1)';
-        });
-        
-        item.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = 'none';
-        });
-    });
-
-    // Add typing effect to header
-    const headerText = document.querySelector('.uploads-header h1');
-    const originalText = headerText.textContent;
-    headerText.textContent = '';
-    
-    let charIndex = 0;
-    const typeInterval = setInterval(() => {
-        headerText.textContent += originalText[charIndex];
-        charIndex++;
-        if (charIndex >= originalText.length) {
-            clearInterval(typeInterval);
-        }
-    }, 100);
-});
-</script>
+<script src="{% static 'userdashboard/uploads.js' %}"></script>
 {% endblock %} 

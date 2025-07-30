@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Property Survey Data</name>
+    <description>Survey data for various properties and zones</description>
+    
+    <!-- Style definitions -->
+    <Style id="residentialStyle">
+      <IconStyle>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/red-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    
+    <Style id="commercialStyle">
+      <IconStyle>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    
+    <Style id="agriculturalStyle">
+      <IconStyle>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/grn-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    
+    <Style id="industrialStyle">
+      <IconStyle>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    
+    <Style id="mixedUseStyle">
+      <IconStyle>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/purple-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    
+    <Style id="otherStyle">
+      <IconStyle>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+
+    <!-- Placemarks -->
+    <Placemark>
+      <name>Ring Road Section</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_10<br/>
+        <b>Owner Name:</b> Ring Road Section<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.714 sq m<br/>
+        <b>Longitude:</b> 85.321<br/>
+        <b>Remarks:</b> Major road
+      ]]></description>
+      <styleUrl>#otherStyle</styleUrl>
+      <Point>
+        <coordinates>85.321,27.714,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Bagmati River Section</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_9<br/>
+        <b>Owner Name:</b> Bagmati River Section<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7126 sq m<br/>
+        <b>Longitude:</b> 85.3242<br/>
+        <b>Remarks:</b> River boundary
+      ]]></description>
+      <styleUrl>#otherStyle</styleUrl>
+      <Point>
+        <coordinates>85.3242,27.7126,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Survey Control Point 2</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_8<br/>
+        <b>Owner Name:</b> Survey Control Point 2<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7185 sq m<br/>
+        <b>Longitude:</b> 85.326<br/>
+        <b>Remarks:</b> Secondary survey point
+      ]]></description>
+      <styleUrl>#otherStyle</styleUrl>
+      <Point>
+        <coordinates>85.326,27.7185,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Survey Control Point 1</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_7<br/>
+        <b>Owner Name:</b> Survey Control Point 1<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7175 sq m<br/>
+        <b>Longitude:</b> 85.325<br/>
+        <b>Remarks:</b> Primary survey point
+      ]]></description>
+      <styleUrl>#otherStyle</styleUrl>
+      <Point>
+        <coordinates>85.325,27.7175,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Plot KTM-002 Boundary</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_6<br/>
+        <b>Owner Name:</b> Plot KTM-002 Boundary<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7179 sq m<br/>
+        <b>Longitude:</b> 85.3249<br/>
+        <b>Remarks:</b> Individual plot boundary
+      ]]></description>
+      <styleUrl>#otherStyle</styleUrl>
+      <Point>
+        <coordinates>85.3249,27.7179,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Plot KTM-001 Boundary</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_5<br/>
+        <b>Owner Name:</b> Plot KTM-001 Boundary<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7171 sq m<br/>
+        <b>Longitude:</b> 85.3239<br/>
+        <b>Remarks:</b> Individual plot boundary
+      ]]></description>
+      <styleUrl>#otherStyle</styleUrl>
+      <Point>
+        <coordinates>85.3239,27.7171,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Mixed Use Zone E</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_4<br/>
+        <b>Owner Name:</b> Mixed Use Zone E<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7192 sq m<br/>
+        <b>Longitude:</b> 85.3247<br/>
+        <b>Remarks:</b> Mixed development zone
+      ]]></description>
+      <styleUrl>#mixedUseStyle</styleUrl>
+      <Point>
+        <coordinates>85.3247,27.7192,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Industrial Zone D</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_3<br/>
+        <b>Owner Name:</b> Industrial Zone D<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7172 sq m<br/>
+        <b>Longitude:</b> 85.3259<br/>
+        <b>Remarks:</b> Industrial development area
+      ]]></description>
+      <styleUrl>#industrialStyle</styleUrl>
+      <Point>
+        <coordinates>85.3259,27.7172,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Agricultural Zone C</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_2<br/>
+        <b>Owner Name:</b> Agricultural Zone C<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7152 sq m<br/>
+        <b>Longitude:</b> 85.3244<br/>
+        <b>Remarks:</b> Agricultural development area
+      ]]></description>
+      <styleUrl>#agriculturalStyle</styleUrl>
+      <Point>
+        <coordinates>85.3244,27.7152,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Commercial Zone B</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11_1<br/>
+        <b>Owner Name:</b> Commercial Zone B<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.7187 sq m<br/>
+        <b>Longitude:</b> 85.3252<br/>
+        <b>Remarks:</b> Main commercial area
+      ]]></description>
+      <styleUrl>#commercialStyle</styleUrl>
+      <Point>
+        <coordinates>85.3252,27.7187,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>Residential Zone A</name>
+      <description><![CDATA[
+        <b>Kitta Number:</b> KML_1_11<br/>
+        <b>Owner Name:</b> Residential Zone A<br/>
+        <b>Land Type:</b> other<br/>
+        <b>Area Size:</b> 27.717 sq m<br/>
+        <b>Longitude:</b> 85.3245<br/>
+        <b>Remarks:</b> Primary residential area
+      ]]></description>
+      <styleUrl>#residentialStyle</styleUrl>
+      <Point>
+        <coordinates>85.3245,27.717,0</coordinates>
+      </Point>
+    </Placemark>
+
+  </Document>
+</kml>
